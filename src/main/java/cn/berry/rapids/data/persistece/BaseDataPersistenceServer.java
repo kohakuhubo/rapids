@@ -8,6 +8,7 @@ import cn.berry.rapids.eventbus.EventBus;
 import cn.berry.rapids.eventbus.EventBusBuilder;
 import cn.berry.rapids.eventbus.Subscription;
 import cn.berry.rapids.model.BaseData;
+import com.berry.clickhouse.tcp.client.ClickHouseClient;
 
 public class BaseDataPersistenceServer implements BaseDataPersistenceHandler<BaseData>, CycleLife {
 
@@ -17,7 +18,10 @@ public class BaseDataPersistenceServer implements BaseDataPersistenceHandler<Bas
 
     private final AggregateServiceHandler aggregateServiceHandler;
 
-    public BaseDataPersistenceServer(Configuration configuration, AggregateServiceHandler aggregateServiceHandler) {
+    private final ClickHouseClient clickHouseClient;
+
+    public BaseDataPersistenceServer(Configuration configuration, AggregateServiceHandler aggregateServiceHandler, ClickHouseClient clickHouseClient) {
+        this.clickHouseClient = clickHouseClient;
         this.configuration = configuration;
         this.aggregateServiceHandler = aggregateServiceHandler;
     }
@@ -34,7 +38,7 @@ public class BaseDataPersistenceServer implements BaseDataPersistenceHandler<Bas
                 .queueSize(dataConfig.getDataInsertQueue())
                 .threadName("base-data-persistence-server");
         for (int i = 0; i < dataConfig.getDataInsertThreadSize(); i++) {
-            eventBusBuilder.subscription((Subscription) new DefaultBaseDataPersistenceHandler(i, configuration, aggregateServiceHandler));
+            eventBusBuilder.subscription((Subscription) new DefaultBaseDataPersistenceHandler(i, configuration, clickHouseClient, aggregateServiceHandler));
         }
         eventBusBuilder.queueSize(dataConfig.getDataInsertQueueNumber())
                 .threadName("base-data-persistence-server-number");

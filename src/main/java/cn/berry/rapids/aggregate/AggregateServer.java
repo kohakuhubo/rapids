@@ -13,6 +13,7 @@ import cn.berry.rapids.eventbus.Event;
 import cn.berry.rapids.eventbus.EventBus;
 import cn.berry.rapids.eventbus.EventBusBuilder;
 import cn.berry.rapids.eventbus.Subscription;
+import com.berry.clickhouse.tcp.client.ClickHouseClient;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,10 +34,13 @@ public class AggregateServer implements AggregateServiceHandler, CycleLife {
 
     private EventBus eventBus;
 
-    public AggregateServer(AppServer appServer, Configuration configuration) {
+    private ClickHouseClient clickHouseClient;
+
+    public AggregateServer(AppServer appServer, Configuration configuration, ClickHouseClient clickHouseClient) {
         this.appServer = appServer;
         this.configuration = configuration;
         this.persistenceHandler = new AggregateViewPersistenceHandler(configuration);
+        this.clickHouseClient = clickHouseClient;
 
         AggregateConfig aggregateConfig = configuration.getSystemConfig().getAggregate();
         for (int i = 0; i < aggregateConfig.getAggregateThreadSize(); i++) {

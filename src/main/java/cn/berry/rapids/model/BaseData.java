@@ -2,6 +2,7 @@ package cn.berry.rapids.model;
 
 import cn.berry.rapids.data.source.SourceEntry;
 import cn.berry.rapids.eventbus.Event;
+import com.berry.clickhouse.tcp.client.data.Block;
 
 public class BaseData implements Event<BaseData> {
 
@@ -23,14 +24,17 @@ public class BaseData implements Event<BaseData> {
 
     private long blockSize;
 
-    public BaseData(int maxRowCnt, long maxBlockSize, SourceEntry<?> sourceEntry) {
+    private Block block;
+
+    public BaseData(int maxRowCnt, long maxBlockSize, Block block, SourceEntry<?> sourceEntry) {
         this.maxRowCnt = maxRowCnt;
         this.maxBlockSize = maxBlockSize;
         this.sourceEntry = sourceEntry;
+        this.block = block;
     }
 
-    public void increment() {
-        rowCnt++;
+    public Block getBlock() {
+        return block;
     }
 
     public boolean isEmpty() {
@@ -38,7 +42,7 @@ public class BaseData implements Event<BaseData> {
     }
 
     public boolean isFull() {
-        return rowCnt >= maxRowCnt || blockSize >= maxBlockSize;
+        return block.rowCnt() >= maxRowCnt || blockSize >= maxBlockSize;
     }
 
     public SourceEntry<?> getSourceEntry() {

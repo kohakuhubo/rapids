@@ -4,6 +4,7 @@ import cn.berry.rapids.aggregate.AggregateServer;
 import cn.berry.rapids.configuration.Configuration;
 import cn.berry.rapids.data.SourceParserServer;
 import cn.berry.rapids.data.persistece.BaseDataPersistenceServer;
+import com.berry.clickhouse.tcp.client.ClickHouseClient;
 
 public class AppServer implements CycleLife {
 
@@ -19,12 +20,16 @@ public class AppServer implements CycleLife {
 
     private final long startTimestamp;
 
-    public AppServer(Configuration configuration) {
+    private final ClickHouseClient clickHouseClient;
+
+    public AppServer(Configuration configuration) throws Exception {
+        this.clickHouseClient = new ClickHouseClient.Builder()
+                .config(configuration.getClickHouseClientConfig()).build();
         this.startTimestamp = System.currentTimeMillis();
         this.coreCnt = Runtime.getRuntime().availableProcessors();
         this.configuration = configuration;
-        this.aggregateServiceHandler = new AggregateServer(this, configuration);
-        this.baseDataPersistenceServer = new BaseDataPersistenceServer(configuration, this.aggregateServiceHandler);
+        this.aggregateServiceHandler = new AggregateServer(this, configuration, this.clickHouseClient);
+        this.baseDataPersistenceServer = new BaseDataPersistenceServer(configuration, this.aggregateServiceHandler, this.clickHouseClient);
         this.sourceParserServer = new SourceParserServer(this, configuration, this.baseDataPersistenceServer);
     }
 
@@ -47,6 +52,7 @@ public class AppServer implements CycleLife {
     public void stop() throws Exception {
         this.sourceParserServer.stop();
         this.baseDataPersistenceServer.stop();
+        this.clickHouseClient.close();
         this.aggregateServiceHandler.stop();
     }
 }

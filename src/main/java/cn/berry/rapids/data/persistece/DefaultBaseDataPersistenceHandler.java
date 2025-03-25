@@ -5,6 +5,7 @@ import cn.berry.rapids.configuration.Configuration;
 import cn.berry.rapids.eventbus.Event;
 import cn.berry.rapids.eventbus.Subscription;
 import cn.berry.rapids.model.BaseData;
+import com.berry.clickhouse.tcp.client.ClickHouseClient;
 
 public class DefaultBaseDataPersistenceHandler implements BaseDataPersistenceHandler<BaseData>, Subscription<Event<BaseData>> {
 
@@ -14,10 +15,13 @@ public class DefaultBaseDataPersistenceHandler implements BaseDataPersistenceHan
 
     private final String id;
 
-    public DefaultBaseDataPersistenceHandler(int num, Configuration configuration, AggregateServiceHandler aggregateServiceHandler) {
+    private final ClickHouseClient clickHouseClient;
+
+    public DefaultBaseDataPersistenceHandler(int num, Configuration configuration, ClickHouseClient clickHouseClient, AggregateServiceHandler aggregateServiceHandler) {
         this.id = "base-" + num;
         this.configuration = configuration;
         this.aggregateServiceHandler = aggregateServiceHandler;
+        this.clickHouseClient = clickHouseClient;
     }
 
     @Override

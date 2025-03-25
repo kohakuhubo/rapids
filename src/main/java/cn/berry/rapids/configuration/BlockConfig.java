@@ -2,93 +2,93 @@ package cn.berry.rapids.configuration;
 
 public class BlockConfig {
 
-    private Long batchLDataMaxRowCnt;
+    private Integer batchDataMaxRowCnt;
 
-    private Long batchDataMaxByteSize;
+    private Integer batchDataMaxByteSize;
 
-    private Integer columnFixedStackLength;
+    private Integer blockSize;
 
-    private Integer byteBufferFixedCacheLength;
+    private Integer stringBlockSize;
 
-    private Integer byteBufferFixedCacheSize;
+    private Integer cacheLength;
 
-    private Integer columnDynamicStackLength;
+    private Integer stackSize;
 
-    private Integer byteBufferDynamicCacheLength;
+    private Integer selfBufferSize;
 
-    private Integer byteBufferDynamicCacheSize;
+    private Integer stringStackSize;
 
-    private Integer byteBufferDynamicCacheStackLength;
+    private Integer stringSelfBufferSize;
 
-    public Long getBatchLDataMaxRowCnt() {
-        return batchLDataMaxRowCnt;
+    public Integer getBatchDataMaxRowCnt() {
+        return batchDataMaxRowCnt;
     }
 
-    public void setBatchLDataMaxRowCnt(Long batchLDataMaxRowCnt) {
-        this.batchLDataMaxRowCnt = batchLDataMaxRowCnt;
+    public void setBatchDataMaxRowCnt(Integer batchDataMaxRowCnt) {
+        this.batchDataMaxRowCnt = batchDataMaxRowCnt;
     }
 
-    public Long getBatchDataMaxByteSize() {
+    public Integer getBatchDataMaxByteSize() {
         return batchDataMaxByteSize;
     }
 
-    public void setBatchDataMaxByteSize(Long batchDataMaxByteSize) {
+    public void setBatchDataMaxByteSize(Integer batchDataMaxByteSize) {
         this.batchDataMaxByteSize = batchDataMaxByteSize;
     }
 
-    public Integer getColumnFixedStackLength() {
-        return columnFixedStackLength;
+    public Integer getBlockSize() {
+        return blockSize;
     }
 
-    public void setColumnFixedStackLength(Integer columnFixedStackLength) {
-        this.columnFixedStackLength = columnFixedStackLength;
+    public void setBlockSize(Integer blockSize) {
+        this.blockSize = blockSize;
     }
 
-    public Integer getByteBufferFixedCacheLength() {
-        return byteBufferFixedCacheLength;
+    public Integer getStringBlockSize() {
+        return stringBlockSize;
     }
 
-    public void setByteBufferFixedCacheLength(Integer byteBufferFixedCacheLength) {
-        this.byteBufferFixedCacheLength = byteBufferFixedCacheLength;
+    public void setStringBlockSize(Integer stringBlockSize) {
+        this.stringBlockSize = stringBlockSize;
     }
 
-    public Integer getByteBufferFixedCacheSize() {
-        return byteBufferFixedCacheSize;
+    public Integer getCacheLength() {
+        return cacheLength;
     }
 
-    public void setByteBufferFixedCacheSize(Integer byteBufferFixedCacheSize) {
-        this.byteBufferFixedCacheSize = byteBufferFixedCacheSize;
+    public void setCacheLength(Integer cacheLength) {
+        this.cacheLength = cacheLength;
     }
 
-    public Integer getColumnDynamicStackLength() {
-        return columnDynamicStackLength;
+    public Integer getStackSize() {
+        return stackSize;
     }
 
-    public void setColumnDynamicStackLength(Integer columnDynamicStackLength) {
-        this.columnDynamicStackLength = columnDynamicStackLength;
+    public void setStackSize(Integer stackSize) {
+        this.stackSize = stackSize;
     }
 
-    public Integer getByteBufferDynamicCacheLength() {
-        return byteBufferDynamicCacheLength;
+    public Integer getSelfBufferSize() {
+        return selfBufferSize;
     }
 
-    public void setByteBufferDynamicCacheLength(Integer byteBufferDynamicCacheLength) {
-        this.byteBufferDynamicCacheLength = byteBufferDynamicCacheLength;
+    public void setSelfBufferSize(Integer selfBufferSize) {
+        this.selfBufferSize = selfBufferSize;
     }
 
-    public Integer getByteBufferDynamicCacheSize() {
-        return byteBufferDynamicCacheSize;
+    public Integer getStringStackSize() {
+        return stringStackSize;
     }
 
-    public void setByteBufferDynamicCacheSize(Integer byteBufferDynamicCacheSize) {
-        this.byteBufferDynamicCacheSize = byteBufferDynamicCacheSize;
+    public void setStringStackSize(Integer stringStackSize) {
+        this.stringStackSize = stringStackSize;
     }
 
-    public Integer getByteBufferDynamicCacheStackLength() {
-        return byteBufferDynamicCacheStackLength;
+    public Integer getStringSelfBufferSize() {
+        return stringSelfBufferSize;
     }
 
-    public void setByteBufferDynamicCacheStackLength(Integer byteBufferDynamicCacheStackLength) {
-        this.byteBufferDynamicCacheStackLength = byteBufferDynamicCacheStackLength;
+    public void setStringSelfBufferSize(Integer stringSelfBufferSize) {
+        this.stringSelfBufferSize = stringSelfBufferSize;
     }
 }

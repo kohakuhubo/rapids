@@ -1,7 +1,7 @@
 package cn.berry.rapids.clickhouse.meta;
 
-import com.github.housepower.jdbc.ClickHouseTableMetaData;
-import com.github.housepower.misc.CollectionUtil;
+import com.berry.clickhouse.tcp.client.jdbc.ClickHouseTableMetaData;
+import com.berry.clickhouse.tcp.client.misc.CollectionUtil;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
