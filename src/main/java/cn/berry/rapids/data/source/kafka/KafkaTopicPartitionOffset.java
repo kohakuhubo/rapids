@@ -2,7 +2,7 @@ package cn.berry.rapids.data.source.kafka;
 
 public class KafkaTopicPartitionOffset {
 
-    private volatile  boolean complete;
+    private volatile boolean complete;
 
     private final long offset;
 

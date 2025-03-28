@@ -6,31 +6,33 @@ import com.berry.clickhouse.tcp.client.data.Block;
 
 public class BaseData implements Event<BaseData> {
 
-    private long startRowId;
-
-    private long endRowId;
-
-    private long dataStartTime;
-
-    private long dataEndTime;
-
     private final int maxRowCnt;
 
     private final long maxBlockSize;
 
-    private final SourceEntry<?> sourceEntry;
+    private SourceEntry<?> sourceEntry;
 
     private int rowCnt;
 
     private long blockSize;
 
-    private Block block;
+    private final Block block;
+
+    public BaseData(int maxRowCnt, long maxBlockSize, Block block) {
+        this.maxRowCnt = maxRowCnt;
+        this.maxBlockSize = maxBlockSize;
+        this.block = block;
+    }
 
     public BaseData(int maxRowCnt, long maxBlockSize, Block block, SourceEntry<?> sourceEntry) {
         this.maxRowCnt = maxRowCnt;
         this.maxBlockSize = maxBlockSize;
         this.sourceEntry = sourceEntry;
         this.block = block;
+    }
+
+    public void setSourceEntry(SourceEntry<?> sourceEntry) {
+        this.sourceEntry = sourceEntry;
     }
 
     public Block getBlock() {
@@ -47,22 +49,6 @@ public class BaseData implements Event<BaseData> {
 
     public SourceEntry<?> getSourceEntry() {
         return sourceEntry;
-    }
-
-    public long getStartRowId() {
-        return startRowId;
-    }
-
-    public long getEndRowId() {
-        return endRowId;
-    }
-
-    public long getDataStartTime() {
-        return dataStartTime;
-    }
-
-    public long getDataEndTime() {
-        return dataEndTime;
     }
 
     @Override

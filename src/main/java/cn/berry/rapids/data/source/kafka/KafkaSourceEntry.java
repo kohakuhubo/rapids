@@ -41,6 +41,10 @@ public class KafkaSourceEntry implements SourceEntry<KafkaSourceEntry> {
 
     }
 
+    public KafkaSource getKafkaSource() {
+        return kafkaSource;
+    }
+
     public List<ConsumerRecord<String, byte[]>> getRecords() {
         return records;
     }

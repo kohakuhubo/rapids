@@ -4,6 +4,7 @@ import cn.berry.rapids.AppServer;
 import cn.berry.rapids.configuration.Configuration;
 import cn.berry.rapids.data.persistece.BaseDataPersistenceServer;
 import cn.berry.rapids.data.source.SourceParserGenerator;
+import com.berry.clickhouse.tcp.client.ClickHouseClient;
 
 public class KafkaSourceParserGenerator extends SourceParserGenerator {
 
@@ -15,7 +16,10 @@ public class KafkaSourceParserGenerator extends SourceParserGenerator {
 
     private final BaseDataPersistenceServer baseDataPersistenceServer;
 
-    public KafkaSourceParserGenerator(AppServer appServer, Configuration configuration, BaseDataPersistenceServer baseDataPersistenceServer) {
+    private final ClickHouseClient clickHouseClient;
+
+    public KafkaSourceParserGenerator(AppServer appServer, Configuration configuration, BaseDataPersistenceServer baseDataPersistenceServer,
+                                      ClickHouseClient clickHouseClient) {
         super("parser-kafka", configuration);
         this.appServer = appServer;
         this.baseDataPersistenceServer = baseDataPersistenceServer;
@@ -30,7 +34,7 @@ public class KafkaSourceParserGenerator extends SourceParserGenerator {
         this.kafkaSource = new KafkaSource(configuration);
         for (int i = 0; i < coreCnt; i++) {
             KafkaSourceParser kafkaSourceParser = new KafkaSourceParser(configuration,
-                    new KafkaSourceProcessor(configuration, baseDataPersistenceServer), kafkaSource);
+                    new KafkaSourceProcessor(configuration, baseDataPersistenceServer, clickHouseClient), kafkaSource);
             addExecutable(kafkaSourceParser);
         }
         this.kafkaSourceThread = new Thread(this.kafkaSource);

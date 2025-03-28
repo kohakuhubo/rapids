@@ -30,7 +30,7 @@ public class AppServer implements CycleLife {
         this.configuration = configuration;
         this.aggregateServiceHandler = new AggregateServer(this, configuration, this.clickHouseClient);
         this.baseDataPersistenceServer = new BaseDataPersistenceServer(configuration, this.aggregateServiceHandler, this.clickHouseClient);
-        this.sourceParserServer = new SourceParserServer(this, configuration, this.baseDataPersistenceServer);
+        this.sourceParserServer = new SourceParserServer(this, configuration, this.baseDataPersistenceServer, this.clickHouseClient);
     }
 
     public long getStartTimestamp() {

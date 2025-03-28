@@ -6,6 +6,7 @@ import cn.berry.rapids.configuration.Configuration;
 import cn.berry.rapids.data.persistece.BaseDataPersistenceServer;
 import cn.berry.rapids.data.source.SourceParserGenerator;
 import cn.berry.rapids.data.source.kafka.KafkaSourceParserGenerator;
+import com.berry.clickhouse.tcp.client.ClickHouseClient;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,11 +21,12 @@ public class SourceParserServer implements CycleLife {
 
     private final List<SourceParserGenerator> sourceParserGenerators;
 
-    public SourceParserServer(AppServer appServer, Configuration configuration, BaseDataPersistenceServer baseDataPersistenceServer) {
+    public SourceParserServer(AppServer appServer, Configuration configuration, BaseDataPersistenceServer baseDataPersistenceServer,
+                              ClickHouseClient clickHouseClient) {
         this.appServer = appServer;
         this.configuration = configuration;
         this.baseDataPersistenceServer = baseDataPersistenceServer;
-        this.sourceParserGenerators = Collections.singletonList(new KafkaSourceParserGenerator(appServer, configuration, baseDataPersistenceServer));
+        this.sourceParserGenerators = Collections.singletonList(new KafkaSourceParserGenerator(appServer, configuration, baseDataPersistenceServer, clickHouseClient));
     }
 
     @Override

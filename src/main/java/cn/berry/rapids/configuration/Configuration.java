@@ -1,6 +1,9 @@
 package cn.berry.rapids.configuration;
 
 import cn.berry.rapids.clickhouse.meta.ClickHouseMetaConfiguration;
+import cn.berry.rapids.entry.BaseDataDefinition;
+import cn.berry.rapids.entry.BaseDataDefinitions;
+import cn.berry.rapids.enums.SourceTypeEnum;
 import com.berry.clickhouse.tcp.client.buffer.StringTypeCacheBufferPoolManager;
 import com.berry.clickhouse.tcp.client.data.StringTypeColumnWriterBufferPoolManager;
 import com.berry.clickhouse.tcp.client.settings.ClickHouseClientConfig;
@@ -12,6 +15,8 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 
 public class Configuration {
 
@@ -21,10 +26,16 @@ public class Configuration {
 
     private final SystemConfig systemConfig;
 
-    public Configuration(ClickHouseMetaConfiguration clickHouseMetaConfiguration, ClickHouseClientConfig clickHouseClientConfig, SystemConfig systemConfig) {
+    private final Map<SourceTypeEnum, Map<String, BaseDataDefinition>> baseDataDefinitions;
+
+    private final static String BASE_DATA_YAML_PATH = "./conf/baseData.yaml";
+
+    public Configuration(ClickHouseMetaConfiguration clickHouseMetaConfiguration, ClickHouseClientConfig clickHouseClientConfig,
+                         Map<SourceTypeEnum, Map<String, BaseDataDefinition>> baseDataDefinitions, SystemConfig systemConfig) {
         this.clickHouseMetaConfiguration = clickHouseMetaConfiguration;
         this.clickHouseClientConfig = clickHouseClientConfig;
         this.systemConfig = systemConfig;
+        this.baseDataDefinitions = baseDataDefinitions;
     }
 
     public static Configuration createConfiguration(String path) throws UnsupportedEncodingException, FileNotFoundException {
@@ -41,6 +52,15 @@ public class Configuration {
         }
         Yaml yaml = new Yaml(new Constructor(SystemConstant.class, new LoaderOptions()));
         SystemConfig systemConfig = yaml.load(inputStream);
+
+        // 读取 baseDataDefinitions
+        Yaml baseDataYaml = new Yaml(new Constructor(BaseDataDefinitions.class, new LoaderOptions()));
+        BaseDataDefinitions dataDefinitions = baseDataYaml.load(Configuration.class.getResourceAsStream(BASE_DATA_YAML_PATH));
+        List<BaseDataDefinition> baseDataDefinitions = dataDefinitions.baseDataDefinitions();
+
+        Map<SourceTypeEnum, Map<String, BaseDataDefinition>> baseDataDefinitionMap = baseDataDefinitions.stream()
+                .collect(java.util.stream.Collectors.groupingBy(BaseDataDefinition::getSourceTypeEnum,
+                        java.util.stream.Collectors.toMap(BaseDataDefinition::getSourceName, baseDataDefinition -> baseDataDefinition)));
 
         ClickHouseConfig clickHouseConfig = systemConfig.getClickHouse();
         BlockConfig blockConfig = systemConfig.getBlock();
@@ -64,7 +84,8 @@ public class Configuration {
                         blockConfig.getStringBlockSize(), blockConfig.getCacheLength()))
                 .build();
         ClickHouseMetaConfiguration clickHouseMetaConfiguration = ClickHouseMetaConfiguration.create(systemConfig.getMetaPath());
-        return new Configuration(clickHouseMetaConfiguration, clickHouseClientConfig, systemConfig);
+
+        return new Configuration(clickHouseMetaConfiguration, clickHouseClientConfig, baseDataDefinitionMap, systemConfig);
     }
 
     public ClickHouseMetaConfiguration getClickHouseMetaConfiguration() {
@@ -77,5 +98,13 @@ public class Configuration {
 
     public SystemConfig getSystemConfig() {
         return systemConfig;
+    }
+
+    public BaseDataDefinition getBaseDataDefinition(SourceTypeEnum sourceTypeEnum, String sourceName) {
+        Map<String, BaseDataDefinition> baseDataDefinitions = this.baseDataDefinitions.get(sourceTypeEnum);
+        if (baseDataDefinitions == null) {
+            return null;
+        }
+        return baseDataDefinitions.get(sourceName);
     }
 }
