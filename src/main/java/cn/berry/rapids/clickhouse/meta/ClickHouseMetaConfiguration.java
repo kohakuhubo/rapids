@@ -8,6 +8,7 @@ import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class ClickHouseMetaConfiguration {
 
@@ -21,15 +22,10 @@ public class ClickHouseMetaConfiguration {
     }
 
     public static ClickHouseMetaConfiguration create(String path) {
-        Map<String, ClickHouseTableMetaData> metaDataMap = new ConcurrentHashMap<>();
         Yaml yaml = new Yaml(new Constructor(MetaData.class, new LoaderOptions()));
         MetaData loadedMetaData = yaml.load(ClickHouseMetaConfiguration.class.getClassLoader().getResourceAsStream(path));
-        for (Meta meta : loadedMetaData.getMetas()) {
-            if (meta.isMeta)
-                metaDataMap.put(meta.getName(),
-                        new ClickHouseTableMetaData(meta.getName(), meta.getColumnNames(), meta.getColumnTypes(),
-                                CollectionUtil.isNotEmpty(meta.getSystemBufferColumns()) ? new HashSet<>(meta.getSystemBufferColumns()) : Collections.emptySet()));
-        }
+        Map<String, ClickHouseTableMetaData> metaDataMap = loadedMetaData.getMetas().stream().collect(Collectors.toMap(Meta::getName,
+                meta -> new ClickHouseTableMetaData(meta.getName(), meta.getColumnNames(), meta.getColumnTypes())));
         return new ClickHouseMetaConfiguration(metaDataMap, loadedMetaData);
     }
 
@@ -48,6 +44,8 @@ public class ClickHouseMetaConfiguration {
 
     public static class Meta {
 
+        private String sourceType;
+
         private String name;
 
         private List<String> columnNames;
@@ -56,15 +54,13 @@ public class ClickHouseMetaConfiguration {
 
         private String calculationClass;
 
-        private String consistencyClass;
+        public String getSourceType() {
+            return sourceType;
+        }
 
-        private Integer threadSize;
-
-        private Integer insertQueueSize;
-
-        private boolean isMeta;
-
-        private List<String> systemBufferColumns;
+        public void setSourceType(String sourceType) {
+            this.sourceType = sourceType;
+        }
 
         public String getName() {
             return name;
@@ -96,46 +92,6 @@ public class ClickHouseMetaConfiguration {
 
         public void setCalculationClass(String calculationClass) {
             this.calculationClass = calculationClass;
-        }
-
-        public String getConsistencyClass() {
-            return consistencyClass;
-        }
-
-        public void setConsistencyClass(String consistencyClass) {
-            this.consistencyClass = consistencyClass;
-        }
-
-        public Integer getThreadSize() {
-            return threadSize;
-        }
-
-        public void setThreadSize(Integer threadSize) {
-            this.threadSize = threadSize;
-        }
-
-        public boolean isMeta() {
-            return isMeta;
-        }
-
-        public void setMeta(boolean meta) {
-            isMeta = meta;
-        }
-
-        public List<String> getSystemBufferColumns() {
-            return systemBufferColumns;
-        }
-
-        public void setSystemBufferColumns(List<String> systemBufferColumns) {
-            this.systemBufferColumns = systemBufferColumns;
-        }
-
-        public Integer getInsertQueueSize() {
-            return insertQueueSize;
-        }
-
-        public void setInsertQueueSize(Integer insertQueueSize) {
-            this.insertQueueSize = insertQueueSize;
         }
     }
 

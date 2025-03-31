@@ -1,4 +1,4 @@
-package cn.berry.rapids.entry;
+package cn.berry.rapids.definition;
 
 import java.util.List;
 

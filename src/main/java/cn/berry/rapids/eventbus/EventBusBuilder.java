@@ -24,7 +24,7 @@ public class EventBusBuilder {
         return this;
     }
 
-    public EventBusBuilder submitEventWaitTime(int val) {
+    public EventBusBuilder submitEventWaitTime(long val) {
         this.submitEventWaitTime = val;
         return this;
     }

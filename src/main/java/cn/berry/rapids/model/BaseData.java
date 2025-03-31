@@ -12,10 +12,6 @@ public class BaseData implements Event<BaseData> {
 
     private SourceEntry<?> sourceEntry;
 
-    private int rowCnt;
-
-    private long blockSize;
-
     private final Block block;
 
     public BaseData(int maxRowCnt, long maxBlockSize, Block block) {
@@ -40,11 +36,11 @@ public class BaseData implements Event<BaseData> {
     }
 
     public boolean isEmpty() {
-        return rowCnt == 0;
+        return block.rowCnt() == 0;
     }
 
     public boolean isFull() {
-        return block.rowCnt() >= maxRowCnt || blockSize >= maxBlockSize;
+        return block.rowCnt() >= maxRowCnt;
     }
 
     public SourceEntry<?> getSourceEntry() {

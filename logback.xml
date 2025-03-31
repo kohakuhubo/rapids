@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- 定义 ERROR 级别的日志输出 -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/error.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/error.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxHistory>10</maxHistory> <!-- 保留10天的日志 -->
+            <totalSizeCap>30MB</totalSizeCap> <!-- 总大小限制为30MB -->
+            <maxFileSize>30MB</maxFileSize> <!-- 每个文件最大30MB -->
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 定义 INFO 级别的日志输出 -->
+    <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/info.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/info.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxHistory>10</maxHistory> <!-- 保留10天的日志 -->
+            <totalSizeCap>30MB</totalSizeCap> <!-- 总大小限制为30MB -->
+            <maxFileSize>30MB</maxFileSize> <!-- 每个文件最大30MB -->
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 定义 DEBUG 级别的日志输出 -->
+    <appender name="DEBUG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/debug.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/debug.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxHistory>10</maxHistory> <!-- 保留10天的日志 -->
+            <totalSizeCap>30MB</totalSizeCap> <!-- 总大小限制为30MB -->
+            <maxFileSize>30MB</maxFileSize> <!-- 每个文件最大30MB -->
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 定义根日志级别 -->
+    <root level="DEBUG">
+        <appender-ref ref="ERROR_FILE" />
+        <appender-ref ref="INFO_FILE" />
+        <appender-ref ref="DEBUG_FILE" />
+    </root>
+
+    <!-- 定义特定包的日志级别 -->
+    <logger name="com.example" level="DEBUG" />
+    <logger name="org.springframework" level="WARN" />
+    <logger name="org.hibernate" level="ERROR" />
+
+    <!-- 关闭日志的自动刷新 -->
+    <configuration>
+        <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+    </configuration>
+
+</configuration>

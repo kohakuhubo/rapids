@@ -2,12 +2,16 @@ package cn.berry.rapids;
 
 import cn.berry.rapids.configuration.Configuration;
 import cn.berry.rapids.configuration.SystemConstant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(mixinStandardHelpOptions = true, version = "0.1", helpCommand = true)
 public class AppServerBootstrapCommand implements Callable<Integer> {
+
+    private static final Logger logger = LoggerFactory.getLogger(AppServerBootstrapCommand.class);
 
     @CommandLine.Option(names = {"-pts", "parseThreadSize"}, defaultValue = "parse thread size")
     private Integer parseThreadSize;
@@ -44,7 +48,7 @@ public class AppServerBootstrapCommand implements Callable<Integer> {
             try {
                 appServer.stop();
             } catch(Throwable e) {
-                //error info
+
             }
         }));
         appServer.start();

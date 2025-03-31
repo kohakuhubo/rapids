@@ -1,4 +1,4 @@
-package cn.berry.rapids.entry;
+package cn.berry.rapids.definition;
 
 import cn.berry.rapids.enums.SourceTypeEnum;
 
@@ -11,8 +11,6 @@ public class BaseDataDefinition {
     private String sourceType;
 
     private String sourceName;
-
-    private String databaseName;
 
     private String tableName;
 
@@ -37,14 +35,6 @@ public class BaseDataDefinition {
 
     public void setSourceName(String sourceName) {
         this.sourceName = sourceName;
-    }
-
-    public String getDatabaseName() {
-        return databaseName;
-    }
-
-    public void setDatabaseName(String databaseName) {
-        this.databaseName = databaseName;
     }
 
     public String getTableName() {

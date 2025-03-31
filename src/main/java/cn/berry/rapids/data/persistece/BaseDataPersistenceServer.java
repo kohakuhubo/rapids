@@ -28,7 +28,7 @@ public class BaseDataPersistenceServer implements BaseDataPersistenceHandler<Bas
 
     @Override
     public void handle(BaseData baseData) {
-        eventBus.postAsync(baseData, 500L);
+        eventBus.postAsync(baseData);
     }
 
     @Override
@@ -36,12 +36,11 @@ public class BaseDataPersistenceServer implements BaseDataPersistenceHandler<Bas
         DataConfig dataConfig = configuration.getSystemConfig().getData();
         EventBusBuilder eventBusBuilder = EventBus.newEventBusBuilder().eventType("base")
                 .queueSize(dataConfig.getDataInsertQueue())
-                .threadName("base-data-persistence-server");
+                .threadName("base-data-persistence-server")
+                .submitEventWaitTime(dataConfig.getDataInsertWaitTimeMills());
         for (int i = 0; i < dataConfig.getDataInsertThreadSize(); i++) {
             eventBusBuilder.subscription((Subscription) new DefaultBaseDataPersistenceHandler(i, configuration, clickHouseClient, aggregateServiceHandler));
         }
-        eventBusBuilder.queueSize(dataConfig.getDataInsertQueueNumber())
-                .threadName("base-data-persistence-server-number");
         this.eventBus = eventBusBuilder.build(configuration);
     }
 

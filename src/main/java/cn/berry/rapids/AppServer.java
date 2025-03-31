@@ -28,7 +28,7 @@ public class AppServer implements CycleLife {
         this.startTimestamp = System.currentTimeMillis();
         this.coreCnt = Runtime.getRuntime().availableProcessors();
         this.configuration = configuration;
-        this.aggregateServiceHandler = new AggregateServer(this, configuration, this.clickHouseClient);
+        this.aggregateServiceHandler = new AggregateServer(configuration, this.clickHouseClient);
         this.baseDataPersistenceServer = new BaseDataPersistenceServer(configuration, this.aggregateServiceHandler, this.clickHouseClient);
         this.sourceParserServer = new SourceParserServer(this, configuration, this.baseDataPersistenceServer, this.clickHouseClient);
     }

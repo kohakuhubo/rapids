@@ -12,8 +12,6 @@ public class SystemConfig {
 
     private ClickHouseConfig clickHouse;
 
-    private String metaPath;
-
     public AggregateConfig getAggregate() {
         return aggregate;
     }
@@ -52,13 +50,5 @@ public class SystemConfig {
 
     public void setClickHouse(ClickHouseConfig clickHouse) {
         this.clickHouse = clickHouse;
-    }
-
-    public String getMetaPath() {
-        return metaPath;
-    }
-
-    public void setMetaPath(String metaPath) {
-        this.metaPath = metaPath;
     }
 }

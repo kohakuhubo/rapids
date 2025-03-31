@@ -2,13 +2,10 @@ package cn.berry.rapids.aggregate.consistency;
 
 import cn.berry.rapids.CycleLife;
 import cn.berry.rapids.aggregate.AggregateEntry;
+import cn.berry.rapids.eventbus.BlockEvent;
 
 public interface PersistenceHandler extends CycleLife {
 
-    String id();
-
-    void id(String id);
-
-    boolean handle(AggregateEntry entry);
+    boolean handle(BlockEvent entry);
 
 }

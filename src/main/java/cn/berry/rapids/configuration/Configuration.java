@@ -1,8 +1,8 @@
 package cn.berry.rapids.configuration;
 
 import cn.berry.rapids.clickhouse.meta.ClickHouseMetaConfiguration;
-import cn.berry.rapids.entry.BaseDataDefinition;
-import cn.berry.rapids.entry.BaseDataDefinitions;
+import cn.berry.rapids.definition.BaseDataDefinition;
+import cn.berry.rapids.definition.BaseDataDefinitions;
 import cn.berry.rapids.enums.SourceTypeEnum;
 import com.berry.clickhouse.tcp.client.buffer.StringTypeCacheBufferPoolManager;
 import com.berry.clickhouse.tcp.client.data.StringTypeColumnWriterBufferPoolManager;
@@ -29,6 +29,8 @@ public class Configuration {
     private final Map<SourceTypeEnum, Map<String, BaseDataDefinition>> baseDataDefinitions;
 
     private final static String BASE_DATA_YAML_PATH = "./conf/baseData.yaml";
+
+    private final static String META_YAML_PATH = "./conf/meta.yaml";
 
     public Configuration(ClickHouseMetaConfiguration clickHouseMetaConfiguration, ClickHouseClientConfig clickHouseClientConfig,
                          Map<SourceTypeEnum, Map<String, BaseDataDefinition>> baseDataDefinitions, SystemConfig systemConfig) {
@@ -83,7 +85,7 @@ public class Configuration {
                 .bufferPoolManager(new StringTypeCacheBufferPoolManager(blockConfig.getBlockSize(),
                         blockConfig.getStringBlockSize(), blockConfig.getCacheLength()))
                 .build();
-        ClickHouseMetaConfiguration clickHouseMetaConfiguration = ClickHouseMetaConfiguration.create(systemConfig.getMetaPath());
+        ClickHouseMetaConfiguration clickHouseMetaConfiguration = ClickHouseMetaConfiguration.create(META_YAML_PATH);
 
         return new Configuration(clickHouseMetaConfiguration, clickHouseClientConfig, baseDataDefinitionMap, systemConfig);
     }

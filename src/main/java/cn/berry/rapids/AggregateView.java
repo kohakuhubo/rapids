@@ -1,34 +1,20 @@
 package cn.berry.rapids;
 
 import cn.berry.rapids.aggregate.AggregateEntry;
+import cn.berry.rapids.eventbus.BlockEvent;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class AggregateView extends AbstractAggregateEntry {
+public class AggregateView {
 
-    private final List<AggregateEntry> entries = new ArrayList<>();
+    private final List<BlockEvent> entries = new ArrayList<>();
 
-
-    public AggregateView(long startRowId, long endRowId) {
-        super(startRowId, endRowId);
-    }
-
-    public void addEntry(AggregateEntry entry) {
+    public void addEntry(BlockEvent entry) {
         entries.add(entry);
     }
 
-    public List<AggregateEntry> getEntries() {
+    public List<BlockEvent> getEntries() {
         return entries;
-    }
-
-    @Override
-    public int size() {
-        return entries.size();
-    }
-
-    @Override
-    public String type() {
-        return "view";
     }
 }

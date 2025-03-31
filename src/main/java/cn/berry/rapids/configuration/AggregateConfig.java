@@ -2,8 +2,6 @@ package cn.berry.rapids.configuration;
 
 public class AggregateConfig {
 
-    private Integer aggregateWaitQueueSizeRatio;
-
     private Long aggregateWaitTime;
 
     private Integer aggregateThreadSize;
@@ -12,19 +10,11 @@ public class AggregateConfig {
 
     private Integer aggregateInsertQueue;
 
-    private Integer insertBatchCount;
+    private Integer insertThreadSize;
 
     private Long insertWaitTimeMillis;
 
     private Integer insertRetryTimes;
-
-    public Integer getAggregateWaitQueueSizeRatio() {
-        return aggregateWaitQueueSizeRatio;
-    }
-
-    public void setAggregateWaitQueueSizeRatio(Integer aggregateWaitQueueSizeRatio) {
-        this.aggregateWaitQueueSizeRatio = aggregateWaitQueueSizeRatio;
-    }
 
     public Long getAggregateWaitTime() {
         return aggregateWaitTime;
@@ -58,12 +48,12 @@ public class AggregateConfig {
         this.aggregateInsertQueue = aggregateInsertQueue;
     }
 
-    public Integer getInsertBatchCount() {
-        return insertBatchCount;
+    public Integer getInsertThreadSize() {
+        return insertThreadSize;
     }
 
-    public void setInsertBatchCount(Integer insertBatchCount) {
-        this.insertBatchCount = insertBatchCount;
+    public void setInsertThreadSize(Integer insertThreadSize) {
+        this.insertThreadSize = insertThreadSize;
     }
 
     public Long getInsertWaitTimeMillis() {

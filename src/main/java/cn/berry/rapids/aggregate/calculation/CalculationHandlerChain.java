@@ -1,10 +1,9 @@
 package cn.berry.rapids.aggregate.calculation;
 
-import cn.berry.rapids.AggregateView;
-import cn.berry.rapids.aggregate.AggregateEntry;
-import cn.berry.rapids.aggregate.DataWrapper;
-
-import java.util.Set;
+import cn.berry.rapids.aggregate.consistency.AggregateBlockPersistenceHandler;
+import cn.berry.rapids.eventbus.BlockEvent;
+import com.berry.clickhouse.tcp.client.data.Block;
+import org.apache.commons.lang3.StringUtils;
 
 public class CalculationHandlerChain {
 
@@ -12,26 +11,27 @@ public class CalculationHandlerChain {
 
     private final CalculationHandlerChain chain;
 
-    public CalculationHandlerChain(CalculationHandler handler) {
-        this(handler, null);
+    private final AggregateBlockPersistenceHandler persistenceHandler;
+
+    public CalculationHandlerChain(AggregateBlockPersistenceHandler persistenceHandler, CalculationHandler handler) {
+        this(persistenceHandler, handler, null);
     }
 
-    public CalculationHandlerChain(CalculationHandler handler, CalculationHandlerChain chain) {
+    public CalculationHandlerChain(AggregateBlockPersistenceHandler persistenceHandler, CalculationHandler handler, CalculationHandlerChain chain) {
+        this.persistenceHandler = persistenceHandler;
         this.handler = handler;
         this.chain = chain;
     }
 
-    public boolean handle(DataWrapper dataWrapper, AggregateView view) {
-        Set<String> aggregateTypes = dataWrapper.getState().getAggregateTypes();
-        if (aggregateTypes.contains("all") || aggregateTypes.contains(handler.type())) {
-            AggregateEntry aggregateEntry = handler.handle(dataWrapper);
-            if (null != aggregateEntry && aggregateEntry.size() > 0) {
-                view.addEntry(aggregateEntry);
+    public boolean handle(BlockEvent event) {
+        if (StringUtils.equalsAnyIgnoreCase(handler.type(), event.type())) {
+            Block block = handler.handle(event);
+            if (null != block) {
+                persistenceHandler.handle(new BlockEvent(handler.type(), block));
             }
         }
-
         if (null != chain)
-            return chain.handle(dataWrapper, view);
+            return chain.handle(event);
         return true;
     }
 }

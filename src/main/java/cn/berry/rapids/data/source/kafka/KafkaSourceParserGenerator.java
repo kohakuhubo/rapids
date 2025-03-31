@@ -22,6 +22,7 @@ public class KafkaSourceParserGenerator extends SourceParserGenerator {
                                       ClickHouseClient clickHouseClient) {
         super("parser-kafka", configuration);
         this.appServer = appServer;
+        this.clickHouseClient = clickHouseClient;
         this.baseDataPersistenceServer = baseDataPersistenceServer;
     }
 

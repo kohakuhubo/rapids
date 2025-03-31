@@ -2,7 +2,7 @@ package cn.berry.rapids.aggregate;
 
 import cn.berry.rapids.BatchData;
 import cn.berry.rapids.eventbus.Event;
-import com.github.housepower.data.Block;
+import com.berry.clickhouse.tcp.client.data.Block;
 
 import java.util.Arrays;
 import java.util.HashSet;

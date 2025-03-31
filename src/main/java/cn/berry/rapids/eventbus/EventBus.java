@@ -19,7 +19,7 @@ public class EventBus {
 
     private final List<RunningAsyncPoster> runningAsyncPosters;
 
-    private final long waitTime;
+    private final long waitTimeMills;
 
     private volatile boolean isStopped = false;
 
@@ -29,7 +29,7 @@ public class EventBus {
 
     public EventBus(EventBusBuilder eventBusBuilder, Configuration configuration) {
         this.eventType = eventBusBuilder.getEventType();
-        this.waitTime = configuration.getSystemConfig().getAggregate().getAggregateWaitTime();
+        this.waitTimeMills = eventBusBuilder.getSubmitEventWaitTime();
 
         Map<String, Subscription<?>> subscriptionMap = new ConcurrentHashMap<>();
         this.eventReceivers = new CopyOnWriteArrayList<>();
@@ -72,18 +72,22 @@ public class EventBus {
         this.executorService.shutdown();
     }
 
-    public boolean postAsync(Event<?> event) {
+    public boolean tryPost(Event<?> event) {
         if (isStopped) {
             return false;
         }
         return eventHandover.tryPost(event);
     }
 
+    public void postAsync(Event<?> event) {
+        postAsync(event, this.waitTimeMills);
+    }
+
     public void postAsync(Event<?> event, long waitTime) {
         if (isStopped) {
             return;
         }
-        long time = (waitTime > 0) ? waitTime : this.waitTime;
+        long time = (waitTime > 0) ? waitTime : this.waitTimeMills;
         do {
             try {
                 if (eventHandover.post(event, time))

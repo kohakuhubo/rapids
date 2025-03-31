@@ -6,7 +6,7 @@ public class DataConfig {
 
     private Integer dataInsertQueue;
 
-    private Integer dataInsertQueueNumber;
+    private Integer dataInsertWaitTimeMills;
 
     private Integer dataInsertThreadSize;
 
@@ -26,12 +26,12 @@ public class DataConfig {
         this.dataInsertQueue = dataInsertQueue;
     }
 
-    public Integer getDataInsertQueueNumber() {
-        return dataInsertQueueNumber;
+    public void setDataInsertWaitTimeMills(Integer dataInsertWaitTimeMills) {
+        this.dataInsertWaitTimeMills = dataInsertWaitTimeMills;
     }
 
-    public void setDataInsertQueueNumber(Integer dataInsertQueueNumber) {
-        this.dataInsertQueueNumber = dataInsertQueueNumber;
+    public Integer getDataInsertWaitTimeMills() {
+        return dataInsertWaitTimeMills;
     }
 
     public Integer getDataInsertThreadSize() {

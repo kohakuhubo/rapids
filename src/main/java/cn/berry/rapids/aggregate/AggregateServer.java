@@ -1,11 +1,9 @@
 package cn.berry.rapids.aggregate;
 
-import cn.berry.rapids.AppServer;
 import cn.berry.rapids.CycleLife;
-import cn.berry.rapids.aggregate.calculation.AggregateViewCalculationHandler;
 import cn.berry.rapids.aggregate.calculation.CalculationHandler;
 import cn.berry.rapids.aggregate.calculation.CalculationHandlerChain;
-import cn.berry.rapids.aggregate.consistency.AggregateViewPersistenceHandler;
+import cn.berry.rapids.aggregate.consistency.AggregateBlockPersistenceHandler;
 import cn.berry.rapids.clickhouse.meta.ClickHouseMetaConfiguration;
 import cn.berry.rapids.configuration.AggregateConfig;
 import cn.berry.rapids.configuration.Configuration;
@@ -16,17 +14,14 @@ import cn.berry.rapids.eventbus.Subscription;
 import com.berry.clickhouse.tcp.client.ClickHouseClient;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class AggregateServer implements AggregateServiceHandler, CycleLife {
 
-    private final AppServer appServer;
-
     private final Configuration configuration;
 
-    private AggregateViewCalculationHandler calculationHandler;
-
-    private final AggregateViewPersistenceHandler persistenceHandler;
+    private final AggregateBlockPersistenceHandler persistenceHandler;
 
     private final Map<String, CalculationHandler> calculationHandlersMap = new HashMap<>();
 
@@ -34,46 +29,49 @@ public class AggregateServer implements AggregateServiceHandler, CycleLife {
 
     private EventBus eventBus;
 
-    private ClickHouseClient clickHouseClient;
+    private final long waitTimeMills;
 
-    public AggregateServer(AppServer appServer, Configuration configuration, ClickHouseClient clickHouseClient) {
-        this.appServer = appServer;
+    public AggregateServer(Configuration configuration, ClickHouseClient clickHouseClient) {
         this.configuration = configuration;
-        this.persistenceHandler = new AggregateViewPersistenceHandler(configuration);
-        this.clickHouseClient = clickHouseClient;
-
-        AggregateConfig aggregateConfig = configuration.getSystemConfig().getAggregate();
-        for (int i = 0; i < aggregateConfig.getAggregateThreadSize(); i++) {
-            createCalculationHandler(persistenceHandler, i);
-        }
+        this.waitTimeMills = configuration.getSystemConfig().getAggregate().getAggregateWaitTime();
+        this.persistenceHandler = new AggregateBlockPersistenceHandler(clickHouseClient, configuration);
+        createCalculationHandler(persistenceHandler);
     }
+
     @Override
     public void handle(DataWrapper dataWrapper) {
-        this.eventBus.postAsync(dataWrapper, 500L);
+        this.eventBus.postAsync(dataWrapper, this.waitTimeMills);
     }
 
-    private void createCalculationHandler(AggregateViewPersistenceHandler persistenceHandler, int num) {
+    private void createCalculationHandler(AggregateBlockPersistenceHandler persistenceHandler) {
         ClickHouseMetaConfiguration metaConfiguration = configuration.getClickHouseMetaConfiguration();
-        CalculationHandlerChain preChain = null;
+        List<ClickHouseMetaConfiguration.Meta> metas = metaConfiguration.getMetaData().getMetas();
+        Map<String, CalculationHandlerChain> tmp = new HashMap<>(metas.size());
+
         for (ClickHouseMetaConfiguration.Meta meta : metaConfiguration.getMetaData().getMetas()) {
             if (null != meta.getCalculationClass() && !"".equals(meta.getCalculationClass())) {
+
+                CalculationHandlerChain preChain = null;
+                if (tmp.containsKey(meta.getSourceType())) {
+                    preChain = tmp.get(meta.getSourceType());
+                }
                 try {
                     CalculationHandler calculationHandler = (CalculationHandler) Class.forName(meta.getCalculationClass())
                             .getConstructor(String.class, Configuration.class)
                             .newInstance(meta.getName(), configuration);
+                    this.typeCalculationHandlersMap.putIfAbsent(calculationHandler.id(), calculationHandler);
                     if (null == preChain) {
-                        preChain = new CalculationHandlerChain(calculationHandler);
+                        preChain = new CalculationHandlerChain(persistenceHandler, calculationHandler);
+                        this.calculationHandlersMap.putIfAbsent(calculationHandler.type(), calculationHandler);
                     } else {
-                        preChain = new CalculationHandlerChain(calculationHandler, preChain);
+                        preChain = new CalculationHandlerChain(persistenceHandler, calculationHandler, preChain);
                     }
-                    typeCalculationHandlersMap.putIfAbsent(calculationHandler.type(), calculationHandler);
+                    tmp.put(meta.getSourceType(), preChain);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    //ignore
                 }
             }
         }
-        this.calculationHandler = new AggregateViewCalculationHandler(persistenceHandler, preChain, "base-" + num);
-        this.calculationHandlersMap.putIfAbsent(this.calculationHandler.id(), this.calculationHandler);
     }
 
     @Override

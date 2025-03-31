@@ -1,0 +1,9 @@
+kafka:
+  bootstrapServers: "localhost:9092"
+  subTopics:
+    - "http_log"
+  appName: berry-rapids
+  groupId: berry-rapids-group
+  pollTimeout: 30000
+  sessionTimeout: 30000
+  maxPollIntervalMs: 60000

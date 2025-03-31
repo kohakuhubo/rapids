@@ -6,8 +6,8 @@ import cn.berry.rapids.configuration.Configuration;
 import cn.berry.rapids.data.persistece.BaseDataPersistenceServer;
 import cn.berry.rapids.data.source.SourceEntry;
 import cn.berry.rapids.data.source.SourceProcessor;
-import cn.berry.rapids.entry.BaseDataDefinition;
-import cn.berry.rapids.entry.ColumnDataDefinition;
+import cn.berry.rapids.definition.BaseDataDefinition;
+import cn.berry.rapids.definition.ColumnDataDefinition;
 import cn.berry.rapids.enums.SourceTypeEnum;
 import cn.berry.rapids.model.BaseData;
 import cn.berry.rapids.util.ByteUtil;
@@ -15,6 +15,8 @@ import com.berry.clickhouse.tcp.client.ClickHouseClient;
 import com.berry.clickhouse.tcp.client.data.Block;
 import com.berry.clickhouse.tcp.client.data.IColumn;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +28,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
+
+    private static final Logger logger = LoggerFactory.getLogger(KafkaSourceProcessor.class);
 
     private final Configuration configuration;
 
@@ -85,29 +89,35 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
                 for (ColumnDataDefinition columnDataDefinition : columnDataDefinitions) {
                     String columnName = columnDataDefinition.getName();
                     if (null == columnName || columnName.trim().isEmpty()) {
+                        //没有列明，不解析，直接跳过
                         offset = skip(columnDataDefinition.getClazz(), bytes, offset);
                     } else {
                         try {
+                            //写入block
                             offset = write(columnDataDefinition.getClazz(), bytes, offset, block, columnName);
                         } catch (SQLException | IOException e) {
                             throw new RuntimeException(e);
                         }
                     }
                 }
-
+                //判断block是否已经写满
                 if (baseData.isFull()) {
+                    //设置数据的kafka位移信息
                     baseData.setSourceEntry(new KafkaSourceEntry(null, sourceEntry.getKafkaSource(),
                             Collections.singletonList(new Pair<>(ktp, commitPartitionOffsetList))));
+                    //提交数据
                     baseDataPersistenceServer.handle(baseData);
-
+                    //重新初始化block
                     try {
                         block = client.createBlock(baseDataDefinition.getTableName());
                     } catch (Exception e) {
                         continue;
                     }
+                    //重新初始化baseData
                     baseData = new BaseData(blockConfig.getBatchDataMaxRowCnt(), blockConfig.getBatchDataMaxByteSize(), block);
                 }
             }
+            //检查是否还有未提交数据
             if (!baseData.isFull()) {
                 baseDataPersistenceServer.handle(baseData);
             }
