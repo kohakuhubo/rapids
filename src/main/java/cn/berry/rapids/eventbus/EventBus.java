@@ -2,10 +2,9 @@ package cn.berry.rapids.eventbus;
 
 import cn.berry.rapids.configuration.Configuration;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 public class EventBus {
 
@@ -23,6 +22,10 @@ public class EventBus {
 
     private volatile boolean isStopped = false;
 
+    private final Map<String, List<Subscription<Event<?>>>> subscriptionMap;
+
+    private final Subscription<Event<?>> defaultSubscription;
+
     public static EventBusBuilder newEventBusBuilder() {
         return new EventBusBuilder();
     }
@@ -31,22 +34,27 @@ public class EventBus {
         this.eventType = eventBusBuilder.getEventType();
         this.waitTimeMills = eventBusBuilder.getSubmitEventWaitTime();
 
-        Map<String, Subscription<?>> subscriptionMap = new ConcurrentHashMap<>();
         this.eventReceivers = new CopyOnWriteArrayList<>();
         this.eventHandover = eventBusBuilder.getEventHandover();
 
-        for (Subscription<Event<?>> subscription : eventBusBuilder.getSubscriptions()) {
-            if (!subscriptionMap.containsKey(subscription.id())) {
-                subscriptionMap.put(subscription.id(), subscription);
-                this.eventReceivers.add(new EventReceiver(this.eventHandover, subscription,
-                        configuration.getSystemConfig().getAggregate().getInsertWaitTimeMillis()));
-            }
+        this.defaultSubscription = eventBusBuilder.getDefaultSubscriptions();
+        List<Subscription<Event<?>>> subscriptions = eventBusBuilder.getSubscriptions();
+        if (eventBusBuilder.getDefaultSubscriptions() != null) {
+            this.subscriptionMap = subscriptions.stream().collect(Collectors.groupingBy(Subscription::type));
+        } else {
+            this.subscriptionMap = Collections.emptyMap();
         }
 
-        if (eventReceivers.size() <= 1) {
+        int threadSize = eventBusBuilder.getThreadSize();
+        for (int i = 0; i < threadSize; i++) {
+            this.eventReceivers.add(new EventReceiver(this.eventHandover, this.defaultSubscription, this.subscriptionMap,
+                    configuration.getSystemConfig().getAggregate().getInsertWaitTimeMillis()));
+        }
+
+        if (threadSize <= 1) {
             this.executorService = Executors.newSingleThreadExecutor();
         } else {
-            this.executorService = new ThreadPoolExecutor(eventReceivers.size(), eventReceivers.size(), 0L, TimeUnit.MILLISECONDS,
+            this.executorService = new ThreadPoolExecutor(threadSize, threadSize, 0L, TimeUnit.MILLISECONDS,
                     new LinkedBlockingQueue<>());
         }
         this.runningAsyncPosters = new ArrayList<>(eventReceivers.size());

@@ -37,6 +37,7 @@ public class BaseDataPersistenceServer implements BaseDataPersistenceHandler<Bas
         EventBusBuilder eventBusBuilder = EventBus.newEventBusBuilder().eventType("base")
                 .queueSize(dataConfig.getDataInsertQueue())
                 .threadName("base-data-persistence-server")
+                .threadSize(dataConfig.getDataInsertThreadSize())
                 .submitEventWaitTime(dataConfig.getDataInsertWaitTimeMills());
         for (int i = 0; i < dataConfig.getDataInsertThreadSize(); i++) {
             eventBusBuilder.subscription((Subscription) new DefaultBaseDataPersistenceHandler(i, configuration, clickHouseClient, aggregateServiceHandler));

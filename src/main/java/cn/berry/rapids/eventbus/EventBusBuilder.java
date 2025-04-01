@@ -13,11 +13,15 @@ public class EventBusBuilder {
 
     private String threadName;
 
-    private List<Subscription<Event<?>>> subscriptions = new LinkedList<>();
+    private final List<Subscription<Event<?>>> subscriptions = new LinkedList<>();
+
+    private Subscription<Event<?>> defaultSubscriptions;
 
     private EventHandover eventHandover;
 
     private long submitEventWaitTime = 1000L;
+
+    private int threadSize;
 
     public EventBusBuilder eventType(String val) {
         this.eventType = val;
@@ -39,8 +43,23 @@ public class EventBusBuilder {
         return this;
     }
 
+    public EventBusBuilder threadSize(int val) {
+        this.threadSize = val;
+        return this;
+    }
+
     public EventBusBuilder subscription(Subscription<Event<?>> val) {
         this.subscriptions.add(val);
+        return this;
+    }
+
+    public EventBusBuilder defaultSubscription(Subscription<Event<?>> val) {
+        this.defaultSubscriptions = val;
+        return this;
+    }
+
+    public EventBusBuilder subscription(List<Subscription<Event<?>>> val) {
+        this.subscriptions.addAll(val);
         return this;
     }
 
@@ -62,6 +81,14 @@ public class EventBusBuilder {
 
     public long getSubmitEventWaitTime() {
         return submitEventWaitTime;
+    }
+
+    public int getThreadSize() {
+        return threadSize;
+    }
+
+    public Subscription<Event<?>> getDefaultSubscriptions() {
+        return defaultSubscriptions;
     }
 
     public EventBus build(Configuration configuration) {

@@ -32,7 +32,7 @@ public class DefaultPersistenceHandler extends Stoppable implements Subscription
 
     @Override
     public String type() {
-        return "";
+        return "default";
     }
 
     @Override

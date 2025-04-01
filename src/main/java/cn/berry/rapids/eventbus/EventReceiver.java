@@ -1,12 +1,21 @@
 package cn.berry.rapids.eventbus;
 
 import cn.berry.rapids.Stoppable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
 
 public class EventReceiver extends Stoppable implements Runnable {
 
+    private static final Logger logger = LoggerFactory.getLogger(EventReceiver.class);
+
     private final EventHandover eventHandover;
 
-    private final Subscription<Event<?>> subscription;
+    private final Subscription<Event<?>> defaultSubscription;
+
+    private final Map<String, List<Subscription<Event<?>>>> subscriptionMap;
 
     private final  long waitTimeMillis;
 
@@ -16,9 +25,11 @@ public class EventReceiver extends Stoppable implements Runnable {
 
     private volatile boolean isTerminal = true;
 
-    public EventReceiver(EventHandover eventHandover, Subscription<Event<?>> subscription, long waitTimeMillis) {
+    public EventReceiver(EventHandover eventHandover, Subscription<Event<?>> defaultSubscription,
+                         Map<String, List<Subscription<Event<?>>>> subscriptionMap, long waitTimeMillis) {
         this.eventHandover = eventHandover;
-        this.subscription = subscription;
+        this.defaultSubscription = defaultSubscription;
+        this.subscriptionMap = subscriptionMap;
         this.waitTimeMillis = waitTimeMillis;
     }
 
@@ -29,7 +40,7 @@ public class EventReceiver extends Stoppable implements Runnable {
             try {
                 event = this.eventHandover.get();
             } catch (Throwable e) {
-                //ignore
+                logger.error("event handover error", e);
             }
             if (Thread.currentThread().isInterrupted() || stopped) {
                 break;
@@ -39,20 +50,30 @@ public class EventReceiver extends Stoppable implements Runnable {
                 clearWaitTimeMillis();
             }
             if (event != null || force) {
-                try {
-                    if (event == null) {
-                        subscription.onMessage(EmptyEvent.INSTANCE);
-                    } else {
-                        subscription.onMessage(event);
+                event = (null == event) ? EmptyEvent.INSTANCE : event;
+                List<Subscription<Event<?>>> subscriptions = subscriptionMap.get(event.type());
+                if (null != subscriptions && !subscriptions.isEmpty()) {
+                    for (Subscription<Event<?>> subscription : subscriptions) {
+                        try {
+                            subscription.onMessage(event);
+                        } catch (Throwable e) {
+                            logger.error("subscription[{}] error", subscription.id(), e);
+                        }
                     }
-                } catch (Throwable e) {
-                    //ignore
+                } else if (null != defaultSubscription) {
+                    try {
+                        defaultSubscription.onMessage(event);
+                    } catch (Throwable e) {
+                        logger.error("default subscription[{}] error", defaultSubscription.id(), e);
+                    }
+                } else {
+                    logger.warn("no subscription for event type: {}", event.type());
                 }
             } else {
                 try {
                     Thread.sleep(200L);
                 } catch (Exception e) {
-                    //ignore
+                    logger.error("sleep error", e);
                 }
             }
         }
@@ -62,10 +83,6 @@ public class EventReceiver extends Stoppable implements Runnable {
     @Override
     public void stop() {
         super.stop();
-    }
-
-    public Subscription<?> getSubscription() {
-        return subscription;
     }
 
     private long loadWaitTimeMillis() {

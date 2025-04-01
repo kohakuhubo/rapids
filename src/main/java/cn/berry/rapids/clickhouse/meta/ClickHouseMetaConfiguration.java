@@ -54,6 +54,8 @@ public class ClickHouseMetaConfiguration {
 
         private String calculationClass;
 
+        private String persistenceHandler;
+
         public String getSourceType() {
             return sourceType;
         }
@@ -92,6 +94,14 @@ public class ClickHouseMetaConfiguration {
 
         public void setCalculationClass(String calculationClass) {
             this.calculationClass = calculationClass;
+        }
+
+        public String getPersistenceHandler() {
+            return persistenceHandler;
+        }
+
+        public void setPersistenceHandler(String persistenceHandler) {
+            this.persistenceHandler = persistenceHandler;
         }
     }
 
