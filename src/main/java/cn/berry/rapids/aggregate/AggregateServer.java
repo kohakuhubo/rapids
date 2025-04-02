@@ -15,10 +15,6 @@ import java.util.List;
 
 public class AggregateServer implements AggregateServiceHandler, CycleLife {
 
-    private static final String EVENT_TYPE = "base";
-
-    private static final String AGGREGATE_ID_PREFIX = "aggregate-calculation-";
-
     private final Configuration configuration;
 
     private final AggregateBlockPersistenceHandler persistenceHandler;
@@ -37,8 +33,8 @@ public class AggregateServer implements AggregateServiceHandler, CycleLife {
     }
 
     @Override
-    public void handle(DataWrapper dataWrapper) {
-        this.eventBus.postAsync(dataWrapper, this.waitTimeMills);
+    public void handle(BlockEvent blockEvent) {
+        this.eventBus.postAsync(blockEvent, this.waitTimeMills);
     }
 
     private void createCalculationHandler(AggregateBlockPersistenceHandler persistenceHandler) {
@@ -85,7 +81,7 @@ public class AggregateServer implements AggregateServiceHandler, CycleLife {
     public void start() throws Exception {
         this.persistenceHandler.start();
         AggregateConfig aggregateConfig = configuration.getSystemConfig().getAggregate();
-        EventBusBuilder eventBusBuilder = EventBus.newEventBusBuilder().eventType("base")
+        EventBusBuilder eventBusBuilder = EventBus.newEventBusBuilder()
                 .queueSize(aggregateConfig.getAggregateWaitQueue())
                 .threadSize(aggregateConfig.getAggregateThreadSize())
                 .subscription(this.subscriptions);

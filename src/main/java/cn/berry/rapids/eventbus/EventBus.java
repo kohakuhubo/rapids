@@ -1,6 +1,8 @@
 package cn.berry.rapids.eventbus;
 
 import cn.berry.rapids.configuration.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -8,7 +10,7 @@ import java.util.stream.Collectors;
 
 public class EventBus {
 
-    private final String eventType;
+    private static final Logger logger = LoggerFactory.getLogger(EventBus.class);
 
     private final ExecutorService executorService;
 
@@ -31,7 +33,6 @@ public class EventBus {
     }
 
     public EventBus(EventBusBuilder eventBusBuilder, Configuration configuration) {
-        this.eventType = eventBusBuilder.getEventType();
         this.waitTimeMills = eventBusBuilder.getSubmitEventWaitTime();
 
         this.eventReceivers = new CopyOnWriteArrayList<>();
@@ -73,7 +74,7 @@ public class EventBus {
                 try {
                     Thread.sleep(100L);
                 } catch (InterruptedException e) {
-                    //ignore
+                    logger.error("stop error", e);
                 }
             }
         });
@@ -101,13 +102,9 @@ public class EventBus {
                 if (eventHandover.post(event, time))
                     break;
             } catch (InterruptedException e) {
-                //ignore
+                logger.error("postAsync error", e);
             }
         } while (!isStopped);
-    }
-
-    public String getEventType() {
-        return eventType;
     }
 
     private record RunningAsyncPoster(EventReceiver asyncPoster, Future<?> future) {

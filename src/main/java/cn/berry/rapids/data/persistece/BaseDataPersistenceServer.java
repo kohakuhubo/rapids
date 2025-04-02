@@ -34,7 +34,7 @@ public class BaseDataPersistenceServer implements BaseDataPersistenceHandler<Bas
     @Override
     public void start() throws Exception {
         DataConfig dataConfig = configuration.getSystemConfig().getData();
-        EventBusBuilder eventBusBuilder = EventBus.newEventBusBuilder().eventType("base")
+        EventBusBuilder eventBusBuilder = EventBus.newEventBusBuilder()
                 .queueSize(dataConfig.getDataInsertQueue())
                 .threadName("base-data-persistence-server")
                 .threadSize(dataConfig.getDataInsertThreadSize())

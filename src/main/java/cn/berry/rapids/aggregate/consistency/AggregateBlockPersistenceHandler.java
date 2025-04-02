@@ -14,6 +14,19 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 聚合块持久化处理器
+ * 
+ * 描述: 负责将聚合块持久化到存储中。
+ * 此类实现了生命周期接口，管理持久化处理器的启动和停止。
+ * 
+ * 特性:
+ * 1. 支持多种持久化策略
+ * 2. 处理聚合块的存储
+ * 
+ * @author Berry
+ * @version 1.0.0
+ */
 public class AggregateBlockPersistenceHandler extends Stoppable implements CycleLife {
 
     private static final Logger logger = LoggerFactory.getLogger(AggregateBlockPersistenceHandler.class);
@@ -30,11 +43,20 @@ public class AggregateBlockPersistenceHandler extends Stoppable implements Cycle
 
     private List<Subscription<Event<?>>> subscriptions;
 
+    /**
+     * 构造聚合块持久化处理器
+     * 
+     * @param clickHouseClient ClickHouse客户端
+     * @param configuration 应用配置对象
+     */
     public AggregateBlockPersistenceHandler(ClickHouseClient clickHouseClient, Configuration configuration) {
         this.configuration = configuration;
         this.clickHouseClient = clickHouseClient;
     }
 
+    /**
+     * 创建持久化处理器
+     */
     private void createPersistenceHandler() {
         ClickHouseMetaConfiguration metaConfiguration = configuration.getClickHouseMetaConfiguration();
         List<ClickHouseMetaConfiguration.Meta> metas = metaConfiguration.getMetaData().getMetas();
@@ -63,6 +85,12 @@ public class AggregateBlockPersistenceHandler extends Stoppable implements Cycle
         }
     }
 
+    /**
+     * 处理区块事件
+     * 
+     * @param entry 区块事件
+     * @return 是否处理成功
+     */
     public boolean handle(BlockEvent entry) {
         if (null == entry || isTerminal())
             return false;
@@ -70,11 +98,14 @@ public class AggregateBlockPersistenceHandler extends Stoppable implements Cycle
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void start() throws Exception {
         createPersistenceHandler();
         AggregateConfig aggregateConfig = configuration.getSystemConfig().getAggregate();
-        EventBusBuilder eventBusBuilder = EventBus.newEventBusBuilder().eventType(TYPE)
+        EventBusBuilder eventBusBuilder = EventBus.newEventBusBuilder()
                 .queueSize(aggregateConfig.getAggregateInsertQueue())
                 .threadSize(aggregateConfig.getInsertThreadSize())
                 .subscription(subscriptions)
@@ -82,6 +113,9 @@ public class AggregateBlockPersistenceHandler extends Stoppable implements Cycle
         this.eventBus = eventBusBuilder.build(configuration);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void stop() {
         super.stop();

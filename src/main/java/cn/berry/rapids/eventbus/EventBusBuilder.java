@@ -7,8 +7,6 @@ import java.util.List;
 
 public class EventBusBuilder {
 
-    private String eventType;
-
     private int queueSize;
 
     private String threadName;
@@ -22,11 +20,6 @@ public class EventBusBuilder {
     private long submitEventWaitTime = 1000L;
 
     private int threadSize;
-
-    public EventBusBuilder eventType(String val) {
-        this.eventType = val;
-        return this;
-    }
 
     public EventBusBuilder submitEventWaitTime(long val) {
         this.submitEventWaitTime = val;
@@ -61,10 +54,6 @@ public class EventBusBuilder {
     public EventBusBuilder subscription(List<Subscription<Event<?>>> val) {
         this.subscriptions.addAll(val);
         return this;
-    }
-
-    public String getEventType() {
-        return eventType;
     }
 
     public String getThreadName() {
