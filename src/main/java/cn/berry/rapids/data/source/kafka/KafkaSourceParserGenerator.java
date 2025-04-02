@@ -6,6 +6,19 @@ import cn.berry.rapids.data.persistece.BaseDataPersistenceServer;
 import cn.berry.rapids.data.source.SourceParserGenerator;
 import com.berry.clickhouse.tcp.client.ClickHouseClient;
 
+/**
+ * Kafka数据源解析器生成器类
+ * 
+ * 描述: 负责生成Kafka数据源解析器，并将其与事件总线关联。
+ * 此类实现了生命周期接口，管理生成器的启动和停止。
+ * 
+ * 特性:
+ * 1. 生成Kafka数据源解析器
+ * 2. 将解析器与事件总线关联
+ * 
+ * @author Berry
+ * @version 1.0.0
+ */
 public class KafkaSourceParserGenerator extends SourceParserGenerator {
 
     private Thread kafkaSourceThread;
@@ -18,6 +31,14 @@ public class KafkaSourceParserGenerator extends SourceParserGenerator {
 
     private final ClickHouseClient clickHouseClient;
 
+    /**
+     * 构造Kafka数据源解析器生成器
+     * 
+     * @param appServer 应用服务器
+     * @param configuration 应用配置对象
+     * @param baseDataPersistenceServer 基础数据持久化服务
+     * @param clickHouseClient ClickHouse客户端
+     */
     public KafkaSourceParserGenerator(AppServer appServer, Configuration configuration, BaseDataPersistenceServer baseDataPersistenceServer,
                                       ClickHouseClient clickHouseClient) {
         super("parser-kafka", configuration);
@@ -26,6 +47,11 @@ public class KafkaSourceParserGenerator extends SourceParserGenerator {
         this.baseDataPersistenceServer = baseDataPersistenceServer;
     }
 
+    /**
+     * 启动Kafka数据源解析器生成器
+     * 
+     * @throws Exception 启动过程中可能发生的任何异常
+     */
     @Override
     public void start() throws Exception {
 
@@ -43,6 +69,11 @@ public class KafkaSourceParserGenerator extends SourceParserGenerator {
         super.start();
     }
 
+    /**
+     * 停止Kafka数据源解析器生成器
+     * 
+     * @throws Exception 停止过程中可能发生的任何异常
+     */
     @Override
     public void stop() throws Exception {
         if (null != this.kafkaSource)

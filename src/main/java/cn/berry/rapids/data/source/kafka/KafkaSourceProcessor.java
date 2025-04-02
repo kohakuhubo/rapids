@@ -27,6 +27,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Kafka数据源处理器类
+ * 
+ * 描述: 负责处理从Kafka消费者中读取的数据，并将其传递给数据解析服务。
+ * 此类实现了生命周期接口，管理处理器的启动和停止。
+ * 
+ * 特性:
+ * 1. 处理Kafka消费者读取的数据
+ * 2. 将数据传递给数据解析服务
+ * 
+ * @author Berry
+ * @version 1.0.0
+ */
 public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaSourceProcessor.class);
@@ -39,6 +52,13 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
 
     private static final byte[] DEFAULT_STRING = "".getBytes(StandardCharsets.UTF_8);
 
+    /**
+     * 构造Kafka数据源处理器
+     * 
+     * @param configuration 应用配置对象
+     * @param baseDataPersistenceServer 基础数据持久化服务
+     * @param client ClickHouse客户端
+     */
     public KafkaSourceProcessor(Configuration configuration, BaseDataPersistenceServer baseDataPersistenceServer,
                                 ClickHouseClient client) {
         this.configuration = configuration;
@@ -46,6 +66,11 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
         this.client = client;
     }
 
+    /**
+     * 处理数据源条目
+     * 
+     * @param entry 数据源条目
+     */
     @Override
     public void process(SourceEntry<KafkaSourceEntry> entry) {
         KafkaSourceEntry sourceEntry = entry.entry();
@@ -56,9 +81,9 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
         Map<String, List<ConsumerRecord<String, byte[]>>> recordsMap = records.stream().collect(Collectors.groupingBy(ConsumerRecord::topic));
 
         for (Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>> ktpOffset : ktpOffsets) {
-            KafkaTopicPartition ktp = ktpOffset.key();
+            KafkaTopicPartition ktp = ktpOffset.getKey();
             String topic = ktp.getTopic();
-            List<KafkaTopicPartitionOffset> ktpOffsetList = ktpOffset.value();
+            List<KafkaTopicPartitionOffset> ktpOffsetList = ktpOffset.getValue();
             List<ConsumerRecord<String, byte[]>> topicRecord = recordsMap.get(topic);
             BaseDataDefinition baseDataDefinition = configuration.getBaseDataDefinition(SourceTypeEnum.KAFKA, topic);
 
@@ -125,7 +150,12 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
     }
 
     /**
-     * 获取各种基本数据类型占用的字节数
+     * 跳过数据类型
+     * 
+     * @param type 数据类型
+     * @param bytes 字节数组
+     * @param offset 偏移量
+     * @return 新的偏移量
      */
     private static int skip(Class<?> type, byte[] bytes, int offset) {
         if (type == byte.class || type == Byte.class) return offset + Byte.BYTES;
@@ -139,7 +169,16 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
     }
 
     /**
-     * 获取各种基本数据类型占用的字节数
+     * 写入数据类型
+     * 
+     * @param type 数据类型
+     * @param bytes 字节数组
+     * @param offset 偏移量
+     * @param block 数据块
+     * @param columnName 列名
+     * @return 新的偏移量
+     * @throws SQLException SQL异常
+     * @throws IOException IO异常
      */
     private static int write(Class<?> type, byte[] bytes, int offset, Block block, String columnName) throws SQLException, IOException {
         IColumn column = block.getColumn(columnName);

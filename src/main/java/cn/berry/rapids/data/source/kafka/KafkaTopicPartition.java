@@ -18,11 +18,23 @@
 package cn.berry.rapids.data.source.kafka;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
+
+/**
+ * Kafka主题分区类
+ * 
+ * 描述: 封装Kafka主题分区的信息。
+ * 
+ * 特性:
+ * 1. 存储主题名称
+ * 2. 存储分区号
+ * 
+ * @author Berry
+ * @version 1.0.0
+ */
 public final class KafkaTopicPartition implements Serializable {
 
     private static final long serialVersionUID = 722083576322742325L;
@@ -33,6 +45,12 @@ public final class KafkaTopicPartition implements Serializable {
     private final int partition;
     private final int cachedHash;
 
+    /**
+     * 构造Kafka主题分区
+     * 
+     * @param topic 主题名称
+     * @param partition 分区号
+     */
     public KafkaTopicPartition(String topic, int partition) {
         this.topic = requireNonNull(topic);
         this.partition = partition;
@@ -41,21 +59,41 @@ public final class KafkaTopicPartition implements Serializable {
 
     // ------------------------------------------------------------------------
 
+    /**
+     * 获取主题名称
+     * 
+     * @return 主题名称
+     */
     public String getTopic() {
         return topic;
     }
 
+    /**
+     * 获取分区号
+     * 
+     * @return 分区号
+     */
     public int getPartition() {
         return partition;
     }
 
     // ------------------------------------------------------------------------
 
+    /**
+     * 获取字符串表示
+     * 
+     * @return 字符串表示
+     */
     @Override
     public String toString() {
         return "KafkaTopicPartition{" + "topic='" + topic + '\'' + ", partition=" + partition + '}';
     }
 
+    /**
+     * 检查是否相等
+     * 
+     * @return 是否相等
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -68,6 +106,11 @@ public final class KafkaTopicPartition implements Serializable {
         }
     }
 
+    /**
+     * 获取哈希码
+     * 
+     * @return 哈希码
+     */
     @Override
     public int hashCode() {
         return cachedHash;
@@ -77,6 +120,12 @@ public final class KafkaTopicPartition implements Serializable {
     //  Utilities
     // ------------------------------------------------------------------------
 
+    /**
+     * 获取字符串表示
+     * 
+     * @param map 主题分区映射
+     * @return 字符串表示
+     */
     public static String toString(Map<KafkaTopicPartition, Long> map) {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<KafkaTopicPartition, Long> p : map.entrySet()) {
@@ -91,6 +140,12 @@ public final class KafkaTopicPartition implements Serializable {
         return sb.toString();
     }
 
+    /**
+     * 获取字符串表示
+     * 
+     * @param partitions 主题分区列表
+     * @return 字符串表示
+     */
     public static String toString(List<KafkaTopicPartition> partitions) {
         StringBuilder sb = new StringBuilder();
         for (KafkaTopicPartition p : partitions) {
@@ -99,7 +154,17 @@ public final class KafkaTopicPartition implements Serializable {
         return sb.toString();
     }
 
+    /**
+     * 比较器类
+     */
     public static class Comparator implements java.util.Comparator<KafkaTopicPartition> {
+        /**
+         * 比较两个主题分区
+         * 
+         * @param p1 主题分区1
+         * @param p2 主题分区2
+         * @return 比较结果
+         */
         @Override
         public int compare(KafkaTopicPartition p1, KafkaTopicPartition p2) {
             if (!p1.getTopic().equals(p2.getTopic())) {

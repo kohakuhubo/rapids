@@ -9,6 +9,18 @@ import org.apache.kafka.common.TopicPartition;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Kafka主题分区偏移量管理器类
+ * 
+ * 描述: 负责管理Kafka主题分区的偏移量信息。
+ * 
+ * 特性:
+ * 1. 存储主题分区偏移量
+ * 2. 提供偏移量的更新和查询方法
+ * 
+ * @author Berry
+ * @version 1.0.0
+ */
 public class KafkaTopicPartitionOffsetManager {
 
     private volatile ConcurrentHashMap<Integer, KafkaTopicPartitionOffsetFastHolder> topicPartitionCache;
@@ -17,10 +29,22 @@ public class KafkaTopicPartitionOffsetManager {
 
     private final Object lock = new Object();
 
+    /**
+     * 获取下一个偏移量
+     * 
+     * @return 偏移量
+     * @throws InterruptedException 中断异常
+     */
     public Map<TopicPartition, OffsetAndMetadata> getNextOffsetToCommit() throws InterruptedException {
         return getNextOffsetToCommit(getHolders());
     }
 
+    /**
+     * 获取下一个偏移量
+     * 
+     * @param holders 偏移量持有者数组
+     * @return 偏移量
+     */
     public Map<TopicPartition, OffsetAndMetadata> getNextOffsetToCommit(KafkaTopicPartitionOffsetFastHolder[] holders) {
         if (null == holders || holders.length == 0) {
             return Collections.emptyMap();
@@ -38,6 +62,13 @@ public class KafkaTopicPartitionOffsetManager {
         return null == offsetAndMetadata ? Collections.emptyMap() : offsetAndMetadata;
     }
 
+    /**
+     * 提交偏移量
+     * 
+     * @param ktp 主题分区
+     * @param offsets 偏移量列表
+     * @throws InterruptedException 中断异常
+     */
     public void commitOffset(KafkaTopicPartition ktp, List<KafkaTopicPartitionOffset> offsets) throws InterruptedException {
 
         for (KafkaTopicPartitionOffset offset : offsets) {
@@ -49,6 +80,11 @@ public class KafkaTopicPartitionOffsetManager {
             holder.refreshOffset();
     }
 
+    /**
+     * 添加持有者
+     * 
+     * @param tps 主题分区集合
+     */
     public void addHolder(Collection<TopicPartition> tps) {
 
         KafkaTopicPartitionOffsetFastHolder[] tmp;
@@ -82,6 +118,12 @@ public class KafkaTopicPartitionOffsetManager {
         }
     }
 
+    /**
+     * 获取缓存
+     * 
+     * @return 缓存
+     * @throws InterruptedException 中断异常
+     */
     private ConcurrentHashMap<Integer, KafkaTopicPartitionOffsetFastHolder> getCache() throws InterruptedException {
         ConcurrentHashMap<Integer, KafkaTopicPartitionOffsetFastHolder> tmp;
         if ((tmp = this.topicPartitionCache) == null) {
@@ -94,6 +136,12 @@ public class KafkaTopicPartitionOffsetManager {
         return tmp;
     }
 
+    /**
+     * 获取持有者
+     * 
+     * @return 持有者
+     * @throws InterruptedException 中断异常
+     */
     private KafkaTopicPartitionOffsetFastHolder[] getHolders() throws InterruptedException {
         KafkaTopicPartitionOffsetFastHolder[] tmp;
         if ((tmp = this.holders) == null) {
@@ -106,6 +154,13 @@ public class KafkaTopicPartitionOffsetManager {
         return tmp;
     }
 
+    /**
+     * 记录偏移量
+     * 
+     * @param records 消费者记录
+     * @return 偏移量元数据
+     * @throws InterruptedException 中断异常
+     */
     public Pair<List<Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>>>, List<ConsumerRecord<String, byte[]>>> recordOffset(ConsumerRecords<String, byte[]> records) throws InterruptedException {
         List<Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>>> offsetMetadata = new ArrayList<>();
         List<ConsumerRecord<String, byte[]>> finalRecords = new ArrayList<>(records.count());
@@ -121,11 +176,15 @@ public class KafkaTopicPartitionOffsetManager {
         return new Pair<>(offsetMetadata, finalRecords);
     }
 
+    /**
+     * 关闭
+     * 
+     * @return 持有者数组
+     */
     public KafkaTopicPartitionOffsetFastHolder[] close() {
         for (KafkaTopicPartitionOffsetFastHolder holder : this.holders) {
             holder.close();
         }
         return holders;
     }
-
 }
