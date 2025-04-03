@@ -71,6 +71,8 @@ public class DefaultPersistenceHandler extends Stoppable implements Subscription
      */
     @Override
     public void onMessage(BlockEvent event) {
+        if (null == event || event.hasMessage() || isTerminal())
+            return;
         handle(event);
     }
 

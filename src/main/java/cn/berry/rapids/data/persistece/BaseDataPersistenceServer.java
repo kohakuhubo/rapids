@@ -4,13 +4,25 @@ import cn.berry.rapids.CycleLife;
 import cn.berry.rapids.aggregate.AggregateServiceHandler;
 import cn.berry.rapids.configuration.Configuration;
 import cn.berry.rapids.configuration.DataConfig;
+import cn.berry.rapids.definition.BaseDataDefinition;
+import cn.berry.rapids.eventbus.Event;
 import cn.berry.rapids.eventbus.EventBus;
 import cn.berry.rapids.eventbus.EventBusBuilder;
 import cn.berry.rapids.eventbus.Subscription;
 import cn.berry.rapids.model.BaseData;
 import com.berry.clickhouse.tcp.client.ClickHouseClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class BaseDataPersistenceServer implements BaseDataPersistenceHandler<BaseData>, CycleLife {
+import java.util.ArrayList;
+import java.util.List;
+
+public class BaseDataPersistenceServer implements CycleLife {
+
+    /**
+     * 日志记录器
+     */
+    private static final Logger logger = LoggerFactory.getLogger(BaseDataPersistenceServer.class);
 
     private final Configuration configuration;
 
@@ -26,7 +38,6 @@ public class BaseDataPersistenceServer implements BaseDataPersistenceHandler<Bas
         this.aggregateServiceHandler = aggregateServiceHandler;
     }
 
-    @Override
     public void handle(BaseData baseData) {
         eventBus.postAsync(baseData);
     }
@@ -38,10 +49,33 @@ public class BaseDataPersistenceServer implements BaseDataPersistenceHandler<Bas
                 .queueSize(dataConfig.getDataInsertQueue())
                 .threadName("base-data-persistence-server")
                 .threadSize(dataConfig.getDataInsertThreadSize())
-                .submitEventWaitTime(dataConfig.getDataInsertWaitTimeMills());
-        for (int i = 0; i < dataConfig.getDataInsertThreadSize(); i++) {
-            eventBusBuilder.subscription((Subscription) new DefaultBaseDataPersistenceHandler(i, configuration, clickHouseClient, aggregateServiceHandler));
+                .submitEventWaitTime(dataConfig.getDataInsertWaitTimeMills())
+                .defaultSubscription((Subscription) new DefaultBaseDataPersistenceHandler(configuration, aggregateServiceHandler, clickHouseClient));
+
+        List<BaseDataDefinition> baseDataDefinitions = configuration.getBaseDataDefinitions();
+        if (null == baseDataDefinitions || baseDataDefinitions.isEmpty()) {
+            return;
         }
+
+        List<Subscription<Event<?>>> subscriptions = new ArrayList<>(baseDataDefinitions.size());
+        for (BaseDataDefinition baseDataDefinition : configuration.getBaseDataDefinitions()) {
+            if (null != baseDataDefinition.getPersistenceHandler() && !"".equals(baseDataDefinition.getPersistenceHandler())) {
+                BaseDataPersistenceHandler persistenceHandler = null;
+                try {
+                    persistenceHandler = (BaseDataPersistenceHandler) Class.forName(baseDataDefinition.getPersistenceHandler())
+                            .getConstructor(Configuration.class, AggregateServiceHandler.class, ClickHouseClient.class)
+                            .newInstance(configuration, aggregateServiceHandler, clickHouseClient);
+                    subscriptions.add(persistenceHandler);
+                } catch (Exception e) {
+                    if (null != persistenceHandler) {
+                        logger.error("create base data persistence handler[" + persistenceHandler.id() + "] error", e);
+                    } else {
+                        logger.error("create base data persistence handler[" + baseDataDefinition.getPersistenceHandler() + "] error", e);
+                    }
+                }
+            }
+        }
+        eventBusBuilder.subscription(subscriptions);
         this.eventBus = eventBusBuilder.build(configuration);
     }
 

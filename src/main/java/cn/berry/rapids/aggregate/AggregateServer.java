@@ -39,7 +39,7 @@ public class AggregateServer implements AggregateServiceHandler, CycleLife {
 
     private void createCalculationHandler(AggregateBlockPersistenceHandler persistenceHandler) {
         ClickHouseMetaConfiguration metaConfiguration = configuration.getClickHouseMetaConfiguration();
-        List<ClickHouseMetaConfiguration.Meta> metas = metaConfiguration.getMetaData().getMetas();
+        List<ClickHouseMetaConfiguration.Meta> metas = metaConfiguration.metaData().getMetas();
 
         this.subscriptions = new ArrayList<>(metas.size());
         for (ClickHouseMetaConfiguration.Meta meta : metas) {

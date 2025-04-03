@@ -59,7 +59,7 @@ public class AggregateBlockPersistenceHandler extends Stoppable implements Cycle
      */
     private void createPersistenceHandler() {
         ClickHouseMetaConfiguration metaConfiguration = configuration.getClickHouseMetaConfiguration();
-        List<ClickHouseMetaConfiguration.Meta> metas = metaConfiguration.getMetaData().getMetas();
+        List<ClickHouseMetaConfiguration.Meta> metas = metaConfiguration.metaData().getMetas();
 
         this.subscriptions = new ArrayList<>(metas.size());
         for (ClickHouseMetaConfiguration.Meta meta : metas) {

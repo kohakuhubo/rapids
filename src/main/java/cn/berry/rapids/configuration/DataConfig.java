@@ -10,6 +10,8 @@ public class DataConfig {
 
     private Integer dataInsertThreadSize;
 
+    private Integer dataInsertRetryTimes;
+
     public Integer getParseThreadSize() {
         return parseThreadSize;
     }
@@ -40,5 +42,13 @@ public class DataConfig {
 
     public void setDataInsertThreadSize(Integer dataInsertThreadSize) {
         this.dataInsertThreadSize = dataInsertThreadSize;
+    }
+
+    public Integer getDataInsertRetryTimes() {
+        return dataInsertRetryTimes;
+    }
+
+    public void setDataInsertRetryTimes(Integer dataInsertRetryTimes) {
+        this.dataInsertRetryTimes = dataInsertRetryTimes;
     }
 }

@@ -1,25 +1,15 @@
 package cn.berry.rapids.clickhouse.meta;
 
 import com.berry.clickhouse.tcp.client.jdbc.ClickHouseTableMetaData;
-import com.berry.clickhouse.tcp.client.misc.CollectionUtil;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class ClickHouseMetaConfiguration {
-
-    private final Map<String, ClickHouseTableMetaData> metaDataMap;
-
-    private final MetaData metaData;
-
-    public ClickHouseMetaConfiguration(Map<String, ClickHouseTableMetaData> metaDataMap, MetaData metaData) {
-        this.metaDataMap = metaDataMap;
-        this.metaData = metaData;
-    }
+public record ClickHouseMetaConfiguration(Map<String, ClickHouseTableMetaData> metaDataMap,
+                                          cn.berry.rapids.clickhouse.meta.ClickHouseMetaConfiguration.MetaData metaData) {
 
     public static ClickHouseMetaConfiguration create(String path) {
         Yaml yaml = new Yaml(new Constructor(MetaData.class, new LoaderOptions()));
@@ -104,11 +94,5 @@ public class ClickHouseMetaConfiguration {
             this.persistenceHandler = persistenceHandler;
         }
     }
-
-
-    public MetaData getMetaData() {
-        return metaData;
-    }
-
 
 }

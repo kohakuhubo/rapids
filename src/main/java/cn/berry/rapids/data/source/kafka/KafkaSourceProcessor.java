@@ -93,7 +93,7 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
             } catch (Exception e) {
                 continue;
             }
-            BaseData baseData = new BaseData(blockConfig.getBatchDataMaxRowCnt(), blockConfig.getBatchDataMaxByteSize(), block);
+            BaseData baseData = new BaseData(topic, blockConfig.getBatchDataMaxRowCnt(), blockConfig.getBatchDataMaxByteSize(), block);
 
             ColumnDataDefinition[] columnDataDefinitions = baseDataDefinition.getColumnDataDefinitions();
 
@@ -139,7 +139,7 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
                         continue;
                     }
                     //重新初始化baseData
-                    baseData = new BaseData(blockConfig.getBatchDataMaxRowCnt(), blockConfig.getBatchDataMaxByteSize(), block);
+                    baseData = new BaseData(topic, blockConfig.getBatchDataMaxRowCnt(), blockConfig.getBatchDataMaxByteSize(), block);
                 }
             }
             //检查是否还有未提交数据

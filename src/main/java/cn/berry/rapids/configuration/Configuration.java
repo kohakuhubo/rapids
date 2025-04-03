@@ -26,17 +26,25 @@ public class Configuration {
 
     private final SystemConfig systemConfig;
 
-    private final Map<SourceTypeEnum, Map<String, BaseDataDefinition>> baseDataDefinitions;
+    private final Map<SourceTypeEnum, Map<String, BaseDataDefinition>> sourceBaseDataDefinitionMap;
+
+    private final List<BaseDataDefinition> baseDataDefinitions;
 
     private final static String BASE_DATA_YAML_PATH = "./conf/baseData.yaml";
 
     private final static String META_YAML_PATH = "./conf/meta.yaml";
 
     public Configuration(ClickHouseMetaConfiguration clickHouseMetaConfiguration, ClickHouseClientConfig clickHouseClientConfig,
-                         Map<SourceTypeEnum, Map<String, BaseDataDefinition>> baseDataDefinitions, SystemConfig systemConfig) {
+                         List<BaseDataDefinition> baseDataDefinitions, SystemConfig systemConfig) {
+
+        Map<SourceTypeEnum, Map<String, BaseDataDefinition>> sourceBaseDataDefinitionMap = baseDataDefinitions.stream()
+                .collect(java.util.stream.Collectors.groupingBy(BaseDataDefinition::getSourceTypeEnum,
+                        java.util.stream.Collectors.toMap(BaseDataDefinition::getSourceName, baseDataDefinition -> baseDataDefinition)));
+
         this.clickHouseMetaConfiguration = clickHouseMetaConfiguration;
         this.clickHouseClientConfig = clickHouseClientConfig;
         this.systemConfig = systemConfig;
+        this.sourceBaseDataDefinitionMap = sourceBaseDataDefinitionMap;
         this.baseDataDefinitions = baseDataDefinitions;
     }
 
@@ -59,10 +67,6 @@ public class Configuration {
         Yaml baseDataYaml = new Yaml(new Constructor(BaseDataDefinitions.class, new LoaderOptions()));
         BaseDataDefinitions dataDefinitions = baseDataYaml.load(Configuration.class.getResourceAsStream(BASE_DATA_YAML_PATH));
         List<BaseDataDefinition> baseDataDefinitions = dataDefinitions.baseDataDefinitions();
-
-        Map<SourceTypeEnum, Map<String, BaseDataDefinition>> baseDataDefinitionMap = baseDataDefinitions.stream()
-                .collect(java.util.stream.Collectors.groupingBy(BaseDataDefinition::getSourceTypeEnum,
-                        java.util.stream.Collectors.toMap(BaseDataDefinition::getSourceName, baseDataDefinition -> baseDataDefinition)));
 
         ClickHouseConfig clickHouseConfig = systemConfig.getClickHouse();
         BlockConfig blockConfig = systemConfig.getBlock();
@@ -87,7 +91,7 @@ public class Configuration {
                 .build();
         ClickHouseMetaConfiguration clickHouseMetaConfiguration = ClickHouseMetaConfiguration.create(META_YAML_PATH);
 
-        return new Configuration(clickHouseMetaConfiguration, clickHouseClientConfig, baseDataDefinitionMap, systemConfig);
+        return new Configuration(clickHouseMetaConfiguration, clickHouseClientConfig, baseDataDefinitions, systemConfig);
     }
 
     public ClickHouseMetaConfiguration getClickHouseMetaConfiguration() {
@@ -103,10 +107,14 @@ public class Configuration {
     }
 
     public BaseDataDefinition getBaseDataDefinition(SourceTypeEnum sourceTypeEnum, String sourceName) {
-        Map<String, BaseDataDefinition> baseDataDefinitions = this.baseDataDefinitions.get(sourceTypeEnum);
+        Map<String, BaseDataDefinition> baseDataDefinitions = this.sourceBaseDataDefinitionMap.get(sourceTypeEnum);
         if (baseDataDefinitions == null) {
             return null;
         }
         return baseDataDefinitions.get(sourceName);
+    }
+
+    public List<BaseDataDefinition> getBaseDataDefinitions() {
+        return baseDataDefinitions;
     }
 }

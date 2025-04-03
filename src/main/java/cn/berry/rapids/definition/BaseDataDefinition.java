@@ -16,6 +16,8 @@ public class BaseDataDefinition {
 
     private ColumnDataDefinition[] columnDataDefinitions;
 
+    private String persistenceHandler;
+
     public String getSourceType() {
         return sourceType;
     }
@@ -51,5 +53,13 @@ public class BaseDataDefinition {
 
     public void setColumnDataDefinitions(ColumnDataDefinition[] columnDataDefinitions) {
         this.columnDataDefinitions = columnDataDefinitions;
+    }
+
+    public String getPersistenceHandler() {
+        return persistenceHandler;
+    }
+
+    public void setPersistenceHandler(String persistenceHandler) {
+        this.persistenceHandler = persistenceHandler;
     }
 }
