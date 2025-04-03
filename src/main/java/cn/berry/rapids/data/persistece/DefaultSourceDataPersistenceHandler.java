@@ -2,16 +2,16 @@ package cn.berry.rapids.data.persistece;
 
 import cn.berry.rapids.aggregate.AggregateServiceHandler;
 import cn.berry.rapids.configuration.Configuration;
-import cn.berry.rapids.eventbus.BlockEvent;
-import cn.berry.rapids.model.BaseData;
+import cn.berry.rapids.eventbus.BlockDataEvent;
+import cn.berry.rapids.model.SourceDataEvent;
 import com.berry.clickhouse.tcp.client.ClickHouseClient;
 import com.berry.clickhouse.tcp.client.data.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultBaseDataPersistenceHandler extends AbstractBaseDataPersistenceHandler {
+public class DefaultSourceDataPersistenceHandler extends AbstractSourceDataPersistenceHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(DefaultBaseDataPersistenceHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultSourceDataPersistenceHandler.class);
 
     private final int retryTimes;
 
@@ -20,8 +20,10 @@ public class DefaultBaseDataPersistenceHandler extends AbstractBaseDataPersisten
 
     }
 
-    public DefaultBaseDataPersistenceHandler(Configuration configuration, AggregateServiceHandler aggregateServiceHandler, ClickHouseClient clickHouseClient) {
-        super(configuration, aggregateServiceHandler, clickHouseClient);
+    public DefaultSourceDataPersistenceHandler(Configuration configuration, AggregateServiceHandler aggregateServiceHandler, ClickHouseClient clickHouseClient) {
+        setConfiguration(configuration);
+        setAggregateServiceHandler(aggregateServiceHandler);
+        setClickHouseClient(clickHouseClient);
         int retryTimes = configuration.getSystemConfig().getData().getDataInsertRetryTimes();
         if (retryTimes <= 0) {
             retryTimes = 3;
@@ -32,14 +34,14 @@ public class DefaultBaseDataPersistenceHandler extends AbstractBaseDataPersisten
     /**
      * 处理区块事件
      *
-     * @param baseData 基础数据
+     * @param sourceDataEvent 基础数据
      * @return 是否处理成功
      */
     @Override
-    public void handle(BaseData baseData) {
+    public void doHandle(SourceDataEvent sourceDataEvent) {
         boolean res = false;
         try {
-            res = handleCanRetry(baseData.getBlock(), retryTimes, null);
+            res = handleCanRetry(sourceDataEvent.getBlock(), retryTimes, null);
         } catch (Throwable e) {
             logger.error("handle block has error! retry times:" + retryTimes, e);
         }
@@ -47,7 +49,7 @@ public class DefaultBaseDataPersistenceHandler extends AbstractBaseDataPersisten
         if (res) {
             AggregateServiceHandler aggregateServiceHandler = getAggregateServiceHandler();
             if (aggregateServiceHandler != null) {
-                aggregateServiceHandler.handle(new BlockEvent(baseData.type(), baseData.getBlock()));
+                aggregateServiceHandler.handle(new BlockDataEvent(sourceDataEvent.type(), sourceDataEvent.getBlock()));
             }
         }
     }
@@ -73,12 +75,7 @@ public class DefaultBaseDataPersistenceHandler extends AbstractBaseDataPersisten
     }
 
     @Override
-    public String id() {
-        return "default";
-    }
+    public void start() throws Exception {
 
-    @Override
-    public String type() {
-        return "base";
     }
 }

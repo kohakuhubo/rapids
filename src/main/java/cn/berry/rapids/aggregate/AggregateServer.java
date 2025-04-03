@@ -33,8 +33,8 @@ public class AggregateServer implements AggregateServiceHandler, CycleLife {
     }
 
     @Override
-    public void handle(BlockEvent blockEvent) {
-        this.eventBus.postAsync(blockEvent, this.waitTimeMills);
+    public void handle(BlockDataEvent blockDataEvent) {
+        this.eventBus.postAsync(blockDataEvent, this.waitTimeMills);
     }
 
     private void createCalculationHandler(AggregateBlockPersistenceHandler persistenceHandler) {
@@ -49,10 +49,6 @@ public class AggregateServer implements AggregateServiceHandler, CycleLife {
                             .getConstructor(String.class, Configuration.class)
                             .newInstance(meta.getName(), configuration);
                     subscriptions.add(transToEvent(new Subscription<>() {
-                        @Override
-                        public String id() {
-                            return calculationHandler.id();
-                        }
 
                         @Override
                         public String type() {
@@ -60,13 +56,13 @@ public class AggregateServer implements AggregateServiceHandler, CycleLife {
                         }
 
                         @Override
-                        public void onMessage(BlockEvent event) {
+                        public void onMessage(BlockDataEvent event) {
                             if (!event.hasMessage()) {
                                 return;
                             }
                             Block block = calculationHandler.handle(event);
                             if (null != block) {
-                                persistenceHandler.handle(new BlockEvent(event.type(), block));
+                                persistenceHandler.handle(new BlockDataEvent(event.type(), block));
                             }
                         }
                     }));
@@ -88,7 +84,7 @@ public class AggregateServer implements AggregateServiceHandler, CycleLife {
         this.eventBus = eventBusBuilder.build(configuration);
     }
 
-    private Subscription transToEvent(Subscription<BlockEvent> subscription) {
+    private Subscription transToEvent(Subscription<BlockDataEvent> subscription) {
         return subscription;
     }
 

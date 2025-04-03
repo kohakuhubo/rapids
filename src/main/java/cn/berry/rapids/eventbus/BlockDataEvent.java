@@ -14,7 +14,7 @@ import com.berry.clickhouse.tcp.client.data.Block;
  * @author Berry
  * @version 1.0.0
  */
-public class BlockEvent implements Event<Block> {
+public class BlockDataEvent implements Event<Block> {
 
     /**
      * 事件类型
@@ -32,7 +32,7 @@ public class BlockEvent implements Event<Block> {
      * @param type 事件类型
      * @param block 数据块对象
      */
-    public BlockEvent(String type, Block block) {
+    public BlockDataEvent(String type, Block block) {
         this.type = type;
         this.block = block;
     }

@@ -2,7 +2,7 @@ package cn.berry.rapids.aggregate.consistency;
 
 import cn.berry.rapids.CycleLife;
 import cn.berry.rapids.Stoppable;
-import cn.berry.rapids.aggregate.consistency.impl.AbstractPersistenceHandler;
+import cn.berry.rapids.aggregate.consistency.impl.AbstractAggregatePersistenceHandler;
 import cn.berry.rapids.clickhouse.meta.ClickHouseMetaConfiguration;
 import cn.berry.rapids.configuration.AggregateConfig;
 import cn.berry.rapids.configuration.Configuration;
@@ -33,11 +33,9 @@ public class AggregateBlockPersistenceHandler extends Stoppable implements Cycle
 
     private final Configuration configuration;
 
-    private final List<PersistenceHandlerDefinition> persistenceHandlers = new ArrayList<>();
+    private final List<RunningAggregatePersistenceHandler> persistenceHandlers = new ArrayList<>();
 
     private final ClickHouseClient clickHouseClient;
-
-    private static final String TYPE = "persistence-handler";
 
     private EventBus eventBus;
 
@@ -64,22 +62,20 @@ public class AggregateBlockPersistenceHandler extends Stoppable implements Cycle
         this.subscriptions = new ArrayList<>(metas.size());
         for (ClickHouseMetaConfiguration.Meta meta : metas) {
             if (null != meta.getPersistenceHandler() && !"".equals(meta.getPersistenceHandler())) {
-                PersistenceHandler persistenceHandler = null;
+                AggregatePersistenceHandler aggregatePersistenceHandler;
                 try {
-                    persistenceHandler = (PersistenceHandler) Class.forName(meta.getPersistenceHandler())
+                    aggregatePersistenceHandler = (AggregatePersistenceHandler) Class.forName(meta.getPersistenceHandler())
                             .getDeclaredConstructor().newInstance();
-                    if (persistenceHandler instanceof AbstractPersistenceHandler) {
-                        ((AbstractPersistenceHandler) persistenceHandler).setClient(this.clickHouseClient);
+                    if (aggregatePersistenceHandler instanceof AbstractAggregatePersistenceHandler abstractAggregatePersistenceHandler) {
+                        abstractAggregatePersistenceHandler.setClient(this.clickHouseClient);
+                        abstractAggregatePersistenceHandler.start();
                     }
-                    persistenceHandler.start();
-                    persistenceHandlers.add(new PersistenceHandlerDefinition(persistenceHandler));
-                    subscriptions.add((Subscription) persistenceHandler);
+
+                    RunningAggregatePersistenceHandler runningHandler = new RunningAggregatePersistenceHandler(meta.getSourceType(), aggregatePersistenceHandler);
+                    persistenceHandlers.add(runningHandler);
+                    subscriptions.add((Subscription) runningHandler);
                 } catch (Exception e) {
-                    if (null != persistenceHandler) {
-                        logger.error("create persistence handler[{}] error", persistenceHandler.id(), e);
-                    } else {
-                        logger.error("create persistence handler[{}] error", meta.getPersistenceHandler(), e);
-                    }
+                    logger.error("create persistence handler[{}] error", meta.getPersistenceHandler(), e);
                 }
             }
         }
@@ -91,7 +87,7 @@ public class AggregateBlockPersistenceHandler extends Stoppable implements Cycle
      * @param entry 区块事件
      * @return 是否处理成功
      */
-    public boolean handle(BlockEvent entry) {
+    public boolean handle(BlockDataEvent entry) {
         if (null == entry || isTerminal())
             return false;
         eventBus.postAsync(entry);
@@ -109,7 +105,7 @@ public class AggregateBlockPersistenceHandler extends Stoppable implements Cycle
                 .queueSize(aggregateConfig.getAggregateInsertQueue())
                 .threadSize(aggregateConfig.getInsertThreadSize())
                 .subscription(subscriptions)
-                .defaultSubscription((Subscription) new DefaultPersistenceHandler(TYPE, clickHouseClient, this.configuration));
+                .defaultSubscription((Subscription) new RunningAggregatePersistenceHandler(null, new DefaultAggregatePersistenceHandler(clickHouseClient, this.configuration)));
         this.eventBus = eventBusBuilder.build(configuration);
     }
 
@@ -120,17 +116,15 @@ public class AggregateBlockPersistenceHandler extends Stoppable implements Cycle
     public void stop() {
         super.stop();
         eventBus.stop();
-        for (PersistenceHandlerDefinition definition : persistenceHandlers) {
-            PersistenceHandler persistenceHandler = definition.persistenceHandler();
-            try {
-                persistenceHandler.stop();
-            } catch (Throwable e) {
-                logger.error("persistence handler[{}] stop error", persistenceHandler.id(), e);
+        for (RunningAggregatePersistenceHandler runningHandler : persistenceHandlers) {
+            if (runningHandler.getAggregatePersistenceHandler() instanceof CycleLife cycleLife) {
+                try {
+                    cycleLife.stop();
+                } catch (Throwable e) {
+                    logger.error("persistence handler[" + cycleLife.getClass().getSimpleName() + "] stop error", e);
+                }
             }
         }
-    }
-
-    private record PersistenceHandlerDefinition(PersistenceHandler persistenceHandler) {
     }
 }
 

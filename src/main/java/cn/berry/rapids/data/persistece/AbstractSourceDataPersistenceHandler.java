@@ -1,25 +1,33 @@
 package cn.berry.rapids.data.persistece;
 
+import cn.berry.rapids.CycleLife;
 import cn.berry.rapids.Stoppable;
 import cn.berry.rapids.aggregate.AggregateServiceHandler;
 import cn.berry.rapids.configuration.Configuration;
-import cn.berry.rapids.eventbus.Event;
-import cn.berry.rapids.model.BaseData;
+import cn.berry.rapids.model.SourceDataEvent;
 import com.berry.clickhouse.tcp.client.ClickHouseClient;
 
-public abstract class AbstractBaseDataPersistenceHandler extends Stoppable implements BaseDataPersistenceHandler<BaseData> {
+public abstract class AbstractSourceDataPersistenceHandler extends Stoppable implements SourceDataPersistenceHandler, CycleLife {
 
-    private final Configuration configuration;
+    private Configuration configuration;
 
-    private final AggregateServiceHandler aggregateServiceHandler;
+    private AggregateServiceHandler aggregateServiceHandler;
 
-    private final ClickHouseClient clickHouseClient;
+    private ClickHouseClient clickHouseClient;
 
     protected abstract void flush();
 
-    public AbstractBaseDataPersistenceHandler(Configuration configuration, AggregateServiceHandler aggregateServiceHandler, ClickHouseClient clickHouseClient) {
+    protected abstract void doHandle(SourceDataEvent sourceDataEvent);
+
+    public void setConfiguration(Configuration configuration) {
         this.configuration = configuration;
+    }
+
+    public void setAggregateServiceHandler(AggregateServiceHandler aggregateServiceHandler) {
         this.aggregateServiceHandler = aggregateServiceHandler;
+    }
+
+    public void setClickHouseClient(ClickHouseClient clickHouseClient) {
         this.clickHouseClient = clickHouseClient;
     }
 
@@ -36,13 +44,13 @@ public abstract class AbstractBaseDataPersistenceHandler extends Stoppable imple
     }
 
     @Override
-    public void onMessage(Event<BaseData> event) {
+    public void handle(SourceDataEvent sourceDataEvent) {
         if (isTerminal()) {
             return;
         }
 
-        if (event.hasMessage()) {
-            handle(event.getMessage());
+        if (null != sourceDataEvent) {
+            doHandle(sourceDataEvent);
         } else {
             flush();
         }

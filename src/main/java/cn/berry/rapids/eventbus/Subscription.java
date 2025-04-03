@@ -16,13 +16,6 @@ package cn.berry.rapids.eventbus;
 public interface Subscription<T> {
 
     /**
-     * 获取订阅者ID
-     * 
-     * @return 订阅者的唯一标识符
-     */
-    String id();
-
-    /**
      * 获取订阅的事件类型
      * 
      * @return 事件类型的字符串表示

@@ -18,7 +18,7 @@ import com.berry.clickhouse.tcp.client.data.Block;
  * @author Berry
  * @version 1.0.0
  */
-public class BaseData implements Event<BaseData> {
+public class SourceDataEvent implements Event<SourceDataEvent> {
 
     private String sourceType;
 
@@ -49,7 +49,7 @@ public class BaseData implements Event<BaseData> {
      * @param maxBlockSize 最大数据块大小限制
      * @param block 数据块对象
      */
-    public BaseData(String sourceType, int maxRowCnt, long maxBlockSize, Block block) {
+    public SourceDataEvent(String sourceType, int maxRowCnt, long maxBlockSize, Block block) {
         this.sourceType = sourceType;
         this.maxRowCnt = maxRowCnt;
         this.maxBlockSize = maxBlockSize;
@@ -117,7 +117,7 @@ public class BaseData implements Event<BaseData> {
      * @return 当前对象作为事件消息
      */
     @Override
-    public BaseData getMessage() {
+    public SourceDataEvent getMessage() {
         return this;
     }
 }

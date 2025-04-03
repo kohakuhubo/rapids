@@ -3,7 +3,7 @@ package cn.berry.rapids.data;
 import cn.berry.rapids.AppServer;
 import cn.berry.rapids.CycleLife;
 import cn.berry.rapids.configuration.Configuration;
-import cn.berry.rapids.data.persistece.BaseDataPersistenceServer;
+import cn.berry.rapids.data.persistece.SourceDataPersistenceServer;
 import cn.berry.rapids.data.source.SourceParserGenerator;
 import cn.berry.rapids.data.source.kafka.KafkaSourceParserGenerator;
 import com.berry.clickhouse.tcp.client.ClickHouseClient;
@@ -31,7 +31,7 @@ public class SourceParserServer implements CycleLife {
      */
     private final Configuration configuration;
 
-    private final BaseDataPersistenceServer baseDataPersistenceServer;
+    private final SourceDataPersistenceServer sourceDataPersistenceServer;
 
     private final List<SourceParserGenerator> sourceParserGenerators;
 
@@ -40,15 +40,15 @@ public class SourceParserServer implements CycleLife {
      * 
      * @param appServer 应用服务器类
      * @param configuration 应用配置对象
-     * @param baseDataPersistenceServer 基础数据持久化处理器
+     * @param sourceDataPersistenceServer 基础数据持久化处理器
      * @param clickHouseClient clickhouse客户端客户端
      */
-    public SourceParserServer(AppServer appServer, Configuration configuration, BaseDataPersistenceServer baseDataPersistenceServer,
+    public SourceParserServer(AppServer appServer, Configuration configuration, SourceDataPersistenceServer sourceDataPersistenceServer,
                               ClickHouseClient clickHouseClient) {
         this.appServer = appServer;
         this.configuration = configuration;
-        this.baseDataPersistenceServer = baseDataPersistenceServer;
-        this.sourceParserGenerators = Collections.singletonList(new KafkaSourceParserGenerator(appServer, configuration, baseDataPersistenceServer, clickHouseClient));
+        this.sourceDataPersistenceServer = sourceDataPersistenceServer;
+        this.sourceParserGenerators = Collections.singletonList(new KafkaSourceParserGenerator(appServer, configuration, sourceDataPersistenceServer, clickHouseClient));
     }
 
     /**

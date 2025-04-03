@@ -3,13 +3,13 @@ package cn.berry.rapids.data.source.kafka;
 import cn.berry.rapids.Pair;
 import cn.berry.rapids.configuration.BlockConfig;
 import cn.berry.rapids.configuration.Configuration;
-import cn.berry.rapids.data.persistece.BaseDataPersistenceServer;
+import cn.berry.rapids.data.persistece.SourceDataPersistenceServer;
 import cn.berry.rapids.data.source.SourceEntry;
 import cn.berry.rapids.data.source.SourceProcessor;
-import cn.berry.rapids.definition.BaseDataDefinition;
+import cn.berry.rapids.definition.SourceDataDefinition;
 import cn.berry.rapids.definition.ColumnDataDefinition;
 import cn.berry.rapids.enums.SourceTypeEnum;
-import cn.berry.rapids.model.BaseData;
+import cn.berry.rapids.model.SourceDataEvent;
 import cn.berry.rapids.util.ByteUtil;
 import com.berry.clickhouse.tcp.client.ClickHouseClient;
 import com.berry.clickhouse.tcp.client.data.Block;
@@ -46,7 +46,7 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
 
     private final Configuration configuration;
 
-    private final BaseDataPersistenceServer baseDataPersistenceServer;
+    private final SourceDataPersistenceServer sourceDataPersistenceServer;
 
     private final ClickHouseClient client;
 
@@ -56,13 +56,13 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
      * 构造Kafka数据源处理器
      * 
      * @param configuration 应用配置对象
-     * @param baseDataPersistenceServer 基础数据持久化服务
+     * @param sourceDataPersistenceServer 基础数据持久化服务
      * @param client ClickHouse客户端
      */
-    public KafkaSourceProcessor(Configuration configuration, BaseDataPersistenceServer baseDataPersistenceServer,
+    public KafkaSourceProcessor(Configuration configuration, SourceDataPersistenceServer sourceDataPersistenceServer,
                                 ClickHouseClient client) {
         this.configuration = configuration;
-        this.baseDataPersistenceServer = baseDataPersistenceServer;
+        this.sourceDataPersistenceServer = sourceDataPersistenceServer;
         this.client = client;
     }
 
@@ -85,17 +85,17 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
             String topic = ktp.getTopic();
             List<KafkaTopicPartitionOffset> ktpOffsetList = ktpOffset.getValue();
             List<ConsumerRecord<String, byte[]>> topicRecord = recordsMap.get(topic);
-            BaseDataDefinition baseDataDefinition = configuration.getBaseDataDefinition(SourceTypeEnum.KAFKA, topic);
+            SourceDataDefinition sourceDataDefinition = configuration.getSourceDataDefinition(SourceTypeEnum.KAFKA, topic);
 
             Block block;
             try {
-                block = client.createBlock(baseDataDefinition.getTableName());
+                block = client.createBlock(sourceDataDefinition.getTableName());
             } catch (Exception e) {
                 continue;
             }
-            BaseData baseData = new BaseData(topic, blockConfig.getBatchDataMaxRowCnt(), blockConfig.getBatchDataMaxByteSize(), block);
+            SourceDataEvent sourceDataEvent = new SourceDataEvent(topic, blockConfig.getBatchDataMaxRowCnt(), blockConfig.getBatchDataMaxByteSize(), block);
 
-            ColumnDataDefinition[] columnDataDefinitions = baseDataDefinition.getColumnDataDefinitions();
+            ColumnDataDefinition[] columnDataDefinitions = sourceDataDefinition.getColumnDataDefinitions();
 
             int commitedSize = 0;
             for (int i = 0; i < topicRecord.size(); i++, commitedSize++) {
@@ -126,25 +126,25 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
                     }
                 }
                 //判断block是否已经写满
-                if (baseData.isFull()) {
+                if (sourceDataEvent.isFull()) {
                     //设置数据的kafka位移信息
-                    baseData.setSourceEntry(new KafkaSourceEntry(null, sourceEntry.getKafkaSource(),
+                    sourceDataEvent.setSourceEntry(new KafkaSourceEntry(null, sourceEntry.getKafkaSource(),
                             Collections.singletonList(new Pair<>(ktp, commitPartitionOffsetList))));
                     //提交数据
-                    baseDataPersistenceServer.handle(baseData);
+                    sourceDataPersistenceServer.handle(sourceDataEvent);
                     //重新初始化block
                     try {
-                        block = client.createBlock(baseDataDefinition.getTableName());
+                        block = client.createBlock(sourceDataDefinition.getTableName());
                     } catch (Exception e) {
                         continue;
                     }
-                    //重新初始化baseData
-                    baseData = new BaseData(topic, blockConfig.getBatchDataMaxRowCnt(), blockConfig.getBatchDataMaxByteSize(), block);
+                    //重新初始化sourceDataEvent
+                    sourceDataEvent = new SourceDataEvent(topic, blockConfig.getBatchDataMaxRowCnt(), blockConfig.getBatchDataMaxByteSize(), block);
                 }
             }
             //检查是否还有未提交数据
-            if (!baseData.isFull()) {
-                baseDataPersistenceServer.handle(baseData);
+            if (!sourceDataEvent.isFull()) {
+                sourceDataPersistenceServer.handle(sourceDataEvent);
             }
         }
     }

@@ -3,7 +3,7 @@ package cn.berry.rapids;
 import cn.berry.rapids.aggregate.AggregateServer;
 import cn.berry.rapids.configuration.Configuration;
 import cn.berry.rapids.data.SourceParserServer;
-import cn.berry.rapids.data.persistece.BaseDataPersistenceServer;
+import cn.berry.rapids.data.persistece.SourceDataPersistenceServer;
 import com.berry.clickhouse.tcp.client.ClickHouseClient;
 
 /**
@@ -31,7 +31,7 @@ public class AppServer implements CycleLife {
     private final AggregateServer aggregateServiceHandler;
 
     /** 基础数据持久化服务 */
-    private final BaseDataPersistenceServer baseDataPersistenceServer;
+    private final SourceDataPersistenceServer sourceDataPersistenceServer;
 
     /** 源数据解析服务 */
     private final SourceParserServer sourceParserServer;
@@ -61,8 +61,8 @@ public class AppServer implements CycleLife {
         this.coreCnt = Runtime.getRuntime().availableProcessors();
         this.configuration = configuration;
         this.aggregateServiceHandler = new AggregateServer(configuration, this.clickHouseClient);
-        this.baseDataPersistenceServer = new BaseDataPersistenceServer(configuration, this.aggregateServiceHandler, this.clickHouseClient);
-        this.sourceParserServer = new SourceParserServer(this, configuration, this.baseDataPersistenceServer, this.clickHouseClient);
+        this.sourceDataPersistenceServer = new SourceDataPersistenceServer(configuration, this.aggregateServiceHandler, this.clickHouseClient);
+        this.sourceParserServer = new SourceParserServer(this, configuration, this.sourceDataPersistenceServer, this.clickHouseClient);
     }
 
     /**
@@ -98,7 +98,7 @@ public class AppServer implements CycleLife {
     @Override
     public void start() throws Exception {
         this.aggregateServiceHandler.start();
-        this.baseDataPersistenceServer.start();
+        this.sourceDataPersistenceServer.start();
         this.sourceParserServer.start();
     }
 
@@ -118,7 +118,7 @@ public class AppServer implements CycleLife {
     @Override
     public void stop() throws Exception {
         this.sourceParserServer.stop();
-        this.baseDataPersistenceServer.stop();
+        this.sourceDataPersistenceServer.stop();
         this.clickHouseClient.close();
         this.aggregateServiceHandler.stop();
     }

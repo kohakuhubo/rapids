@@ -1,6 +1,6 @@
 package cn.berry.rapids.aggregate;
 
-import cn.berry.rapids.eventbus.BlockEvent;
+import cn.berry.rapids.eventbus.BlockDataEvent;
 
 /**
  * 聚合服务处理器接口
@@ -16,7 +16,7 @@ public interface AggregateServiceHandler {
     /**
      * 处理数据包装
      * 
-     * @param blockEvent 数据对象
+     * @param blockDataEvent 数据对象
      */
-    void handle(BlockEvent blockEvent);
+    void handle(BlockDataEvent blockDataEvent);
 }

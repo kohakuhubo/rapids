@@ -105,14 +105,14 @@ public class EventReceiver extends Stoppable implements Runnable {
                         try {
                             subscription.onMessage(event);
                         } catch (Throwable e) {
-                            logger.error("subscription[{}] error", subscription.id(), e);
+                            logger.error("subscription[{}] error", subscription.type(), e);
                         }
                     }
                 } else if (null != defaultSubscription) {
                     try {
                         defaultSubscription.onMessage(event);
                     } catch (Throwable e) {
-                        logger.error("default subscription[{}] error", defaultSubscription.id(), e);
+                        logger.error("default subscription[{}] error", defaultSubscription.type(), e);
                     }
                 } else {
                     logger.warn("no subscription for event type: {}", event.type());

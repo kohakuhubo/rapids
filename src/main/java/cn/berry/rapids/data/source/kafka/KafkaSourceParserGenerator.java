@@ -2,7 +2,7 @@ package cn.berry.rapids.data.source.kafka;
 
 import cn.berry.rapids.AppServer;
 import cn.berry.rapids.configuration.Configuration;
-import cn.berry.rapids.data.persistece.BaseDataPersistenceServer;
+import cn.berry.rapids.data.persistece.SourceDataPersistenceServer;
 import cn.berry.rapids.data.source.SourceParserGenerator;
 import com.berry.clickhouse.tcp.client.ClickHouseClient;
 
@@ -27,7 +27,7 @@ public class KafkaSourceParserGenerator extends SourceParserGenerator {
 
     private final AppServer appServer;
 
-    private final BaseDataPersistenceServer baseDataPersistenceServer;
+    private final SourceDataPersistenceServer sourceDataPersistenceServer;
 
     private final ClickHouseClient clickHouseClient;
 
@@ -36,15 +36,15 @@ public class KafkaSourceParserGenerator extends SourceParserGenerator {
      * 
      * @param appServer 应用服务器
      * @param configuration 应用配置对象
-     * @param baseDataPersistenceServer 基础数据持久化服务
+     * @param sourceDataPersistenceServer 基础数据持久化服务
      * @param clickHouseClient ClickHouse客户端
      */
-    public KafkaSourceParserGenerator(AppServer appServer, Configuration configuration, BaseDataPersistenceServer baseDataPersistenceServer,
+    public KafkaSourceParserGenerator(AppServer appServer, Configuration configuration, SourceDataPersistenceServer sourceDataPersistenceServer,
                                       ClickHouseClient clickHouseClient) {
         super("parser-kafka", configuration);
         this.appServer = appServer;
         this.clickHouseClient = clickHouseClient;
-        this.baseDataPersistenceServer = baseDataPersistenceServer;
+        this.sourceDataPersistenceServer = sourceDataPersistenceServer;
     }
 
     /**
@@ -61,7 +61,7 @@ public class KafkaSourceParserGenerator extends SourceParserGenerator {
         this.kafkaSource = new KafkaSource(configuration);
         for (int i = 0; i < coreCnt; i++) {
             KafkaSourceParser kafkaSourceParser = new KafkaSourceParser(configuration,
-                    new KafkaSourceProcessor(configuration, baseDataPersistenceServer, clickHouseClient), kafkaSource);
+                    new KafkaSourceProcessor(configuration, sourceDataPersistenceServer, clickHouseClient), kafkaSource);
             addExecutable(kafkaSourceParser);
         }
         this.kafkaSourceThread = new Thread(this.kafkaSource);

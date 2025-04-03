@@ -1,9 +1,8 @@
 package cn.berry.rapids.aggregate.consistency;
 
-import cn.berry.rapids.Stoppable;
+import cn.berry.rapids.aggregate.consistency.impl.AbstractAggregatePersistenceHandler;
 import cn.berry.rapids.configuration.Configuration;
-import cn.berry.rapids.eventbus.BlockEvent;
-import cn.berry.rapids.eventbus.Subscription;
+import cn.berry.rapids.eventbus.BlockDataEvent;
 import com.berry.clickhouse.tcp.client.ClickHouseClient;
 import com.berry.clickhouse.tcp.client.data.Block;
 
@@ -19,9 +18,7 @@ import com.berry.clickhouse.tcp.client.data.Block;
  * @author Berry
  * @version 1.0.0
  */
-public class DefaultPersistenceHandler extends Stoppable implements Subscription<BlockEvent>, PersistenceHandler {
-
-    private final String id;
+public class DefaultAggregatePersistenceHandler extends AbstractAggregatePersistenceHandler {
 
     private final ClickHouseClient clickHouseClient;
 
@@ -29,13 +26,11 @@ public class DefaultPersistenceHandler extends Stoppable implements Subscription
 
     /**
      * 构造函数
-     * 
-     * @param id 处理器ID
+     *
      * @param clickHouseClient ClickHouse客户端
      * @param configuration 应用配置对象
      */
-    public DefaultPersistenceHandler(String id, ClickHouseClient clickHouseClient, Configuration configuration) {
-        this.id = id;
+    public DefaultAggregatePersistenceHandler(ClickHouseClient clickHouseClient, Configuration configuration) {
         this.clickHouseClient = clickHouseClient;
         int retryTimes = configuration.getSystemConfig().getAggregate().getInsertRetryTimes();
         if (retryTimes <= 0) {
@@ -44,49 +39,19 @@ public class DefaultPersistenceHandler extends Stoppable implements Subscription
         this.retryTimes = retryTimes;
     }
 
-    /**
-     * 获取处理器ID
-     * 
-     * @return 处理器ID
-     */
     @Override
-    public String id() {
-        return this.id;
-    }
-
-    /**
-     * 获取处理器类型
-     * 
-     * @return 处理器类型
-     */
-    @Override
-    public String type() {
-        return "default";
+    protected boolean flush() {
+        return true;
     }
 
     /**
      * 处理区块事件
-     * 
-     * @param event 区块事件
-     */
-    @Override
-    public void onMessage(BlockEvent event) {
-        if (null == event || event.hasMessage() || isTerminal())
-            return;
-        handle(event);
-    }
-
-    /**
-     * 处理区块事件
-     * 
+     *
      * @param event 区块事件
      * @return 是否处理成功
      */
     @Override
-    public boolean handle(BlockEvent event) {
-        if (isTerminal()) {
-            return false;
-        }
+    protected boolean doHandle(BlockDataEvent event) {
         try {
             handleCanRetry(event.getMessage(), retryTimes, null);
         } catch (Throwable e) {

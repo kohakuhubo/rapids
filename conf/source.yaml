@@ -1,0 +1,21 @@
+definitions:
+  - sourceType: kafka # kafka source type
+    sourceName: http # kafka topic
+    tableName: http_log # clickhosue table name
+    # persistence handler class name, default is cn.berry.rapids.data.persistece.DefaultSourceDataPersistenceHandler
+    # persistenceHandler: cn.berry.rapids.data.persistece.DefaultSourceDataPersistenceHandler
+    columnDataDefinitions:
+      - name: host # clickhosue column name
+        type: string # clickhosue column type
+      - name: sessionId
+        type: int
+      - name: url
+        type: string
+      - name: method
+        type: int
+      - name: contentType
+        type: int
+      - name: reqByteSize
+        type: long
+      - name: respByteSize
+        type: long

@@ -1,8 +1,6 @@
 package cn.berry.rapids.aggregate.consistency;
 
-import cn.berry.rapids.CycleLife;
-import cn.berry.rapids.eventbus.BlockEvent;
-import cn.berry.rapids.eventbus.Subscription;
+import cn.berry.rapids.eventbus.BlockDataEvent;
 
 /**
  * 持久化处理器接口
@@ -13,7 +11,7 @@ import cn.berry.rapids.eventbus.Subscription;
  * @author Berry
  * @version 1.0.0
  */
-public interface PersistenceHandler extends CycleLife, Subscription<BlockEvent> {
+public interface AggregatePersistenceHandler {
 
     /**
      * 处理区块事件
@@ -21,10 +19,5 @@ public interface PersistenceHandler extends CycleLife, Subscription<BlockEvent> 
      * @param entry 区块事件
      * @return 是否处理成功
      */
-    boolean handle(BlockEvent entry);
-
-    @Override
-    default void onMessage(BlockEvent event) {
-        handle(event);
-    }
+    boolean handle(BlockDataEvent entry);
 }

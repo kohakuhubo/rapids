@@ -1,6 +1,9 @@
 package cn.berry.rapids.aggregate.consistency.impl;
 
-import cn.berry.rapids.aggregate.consistency.PersistenceHandler;
+import cn.berry.rapids.CycleLife;
+import cn.berry.rapids.Stoppable;
+import cn.berry.rapids.aggregate.consistency.AggregatePersistenceHandler;
+import cn.berry.rapids.eventbus.BlockDataEvent;
 import com.berry.clickhouse.tcp.client.ClickHouseClient;
 
 /**
@@ -14,9 +17,13 @@ import com.berry.clickhouse.tcp.client.ClickHouseClient;
  * @author Berry
  * @version 1.0.0
  */
-public abstract class AbstractPersistenceHandler implements PersistenceHandler {
+public abstract class AbstractAggregatePersistenceHandler extends Stoppable implements AggregatePersistenceHandler, CycleLife {
 
     private ClickHouseClient client;
+
+    protected abstract boolean flush();
+
+    protected abstract boolean doHandle(BlockDataEvent event);
 
     /**
      * 获取ClickHouse客户端
@@ -34,5 +41,18 @@ public abstract class AbstractPersistenceHandler implements PersistenceHandler {
      */
     public void setClient(ClickHouseClient client) {
         this.client = client;
+    }
+
+    @Override
+    public boolean handle(BlockDataEvent event) {
+        if (isTerminal()) {
+            return false;
+        }
+
+        if (null != event) {
+            return doHandle(event);
+        } else {
+            return flush();
+        }
     }
 }

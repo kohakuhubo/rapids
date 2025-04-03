@@ -4,7 +4,7 @@ import cn.berry.rapids.enums.SourceTypeEnum;
 
 import java.util.Locale;
 
-public class BaseDataDefinition {
+public class SourceDataDefinition {
 
     private SourceTypeEnum sourceTypeEnum;
 

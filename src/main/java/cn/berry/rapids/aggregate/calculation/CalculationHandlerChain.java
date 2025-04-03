@@ -1,7 +1,7 @@
 package cn.berry.rapids.aggregate.calculation;
 
 import cn.berry.rapids.aggregate.consistency.AggregateBlockPersistenceHandler;
-import cn.berry.rapids.eventbus.BlockEvent;
+import cn.berry.rapids.eventbus.BlockDataEvent;
 import com.berry.clickhouse.tcp.client.data.Block;
 import org.apache.commons.lang3.StringUtils;
 
@@ -54,11 +54,11 @@ public class CalculationHandlerChain {
      * @param event 区块事件
      * @return 是否处理成功
      */
-    public boolean handle(BlockEvent event) {
+    public boolean handle(BlockDataEvent event) {
         if (StringUtils.equalsAnyIgnoreCase(handler.type(), event.type())) {
             Block block = handler.handle(event);
             if (null != block) {
-                persistenceHandler.handle(new BlockEvent(handler.type(), block));
+                persistenceHandler.handle(new BlockDataEvent(handler.type(), block));
             }
         }
         if (null != chain)
