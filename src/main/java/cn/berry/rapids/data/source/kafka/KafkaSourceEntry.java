@@ -21,24 +21,19 @@ import java.util.List;
  */
 public class KafkaSourceEntry implements SourceEntry<KafkaSourceEntry> {
 
-    private final List<ConsumerRecord<String, byte[]>> records;
+    private final List<KafkaTopicRecords> kafkaTopicRecordsList;
 
     private final KafkaSource kafkaSource;
 
-    private final List<Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>>> ktpOffsets;
-
     /**
      * 构造Kafka数据源条目
-     * 
-     * @param records 消费者记录
+     *
      * @param kafkaSource Kafka数据源
-     * @param ktpOffsets 主题分区偏移量
+     * @param kafkaTopicRecordsList 消费者记录
      */
-    public KafkaSourceEntry(List<ConsumerRecord<String, byte[]>> records, KafkaSource kafkaSource, List<Pair<KafkaTopicPartition,
-            List<KafkaTopicPartitionOffset>>> ktpOffsets) {
-        this.records = records;
+    public KafkaSourceEntry(KafkaSource kafkaSource, List<KafkaTopicRecords> kafkaTopicRecordsList) {
         this.kafkaSource = kafkaSource;
-        this.ktpOffsets = ktpOffsets;
+        this.kafkaTopicRecordsList = kafkaTopicRecordsList;
     }
 
     /**
@@ -86,21 +81,7 @@ public class KafkaSourceEntry implements SourceEntry<KafkaSourceEntry> {
         return kafkaSource;
     }
 
-    /**
-     * 获取消费者记录
-     * 
-     * @return 消费者记录
-     */
-    public List<ConsumerRecord<String, byte[]>> getRecords() {
-        return records;
-    }
-
-    /**
-     * 获取主题分区偏移量
-     * 
-     * @return 主题分区偏移量
-     */
-    public List<Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>>> getKtpOffsets() {
-        return ktpOffsets;
+    public List<KafkaTopicRecords> getKafkaTopicRecordsList() {
+        return kafkaTopicRecordsList;
     }
 }

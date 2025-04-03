@@ -5,6 +5,8 @@ import cn.berry.rapids.configuration.Configuration;
 import cn.berry.rapids.eventbus.BlockDataEvent;
 import com.berry.clickhouse.tcp.client.ClickHouseClient;
 import com.berry.clickhouse.tcp.client.data.Block;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 默认持久化处理器
@@ -19,6 +21,11 @@ import com.berry.clickhouse.tcp.client.data.Block;
  * @version 1.0.0
  */
 public class DefaultAggregatePersistenceHandler extends AbstractAggregatePersistenceHandler {
+
+    /**
+     * 日志记录器
+     */
+    private static final Logger logger = LoggerFactory.getLogger(DefaultAggregatePersistenceHandler.class);
 
     private final ClickHouseClient clickHouseClient;
 
@@ -55,7 +62,7 @@ public class DefaultAggregatePersistenceHandler extends AbstractAggregatePersist
         try {
             handleCanRetry(event.getMessage(), retryTimes, null);
         } catch (Throwable e) {
-            // 处理异常
+            logger.error("handle block data event[" + event.type() + "] error!", e);
         }
         return false;
     }

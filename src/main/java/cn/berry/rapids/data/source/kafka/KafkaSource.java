@@ -127,7 +127,7 @@ public class KafkaSource extends Stoppable implements Runnable, Source<KafkaSour
                 if (null == sourceEntry) {
                     ConsumerRecords<String, byte[]> records = kafkaFetcher.poll();
                     if (null != records && !records.isEmpty()) {
-                        Pair<List<Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>>>, List<ConsumerRecord<String, byte[]>>> pair = offsetManager.recordOffset(records);
+                        List<KafkaTopicRecords> kafkaTopicRecordsList = offsetManager.recordOffset(records);
                         if (null != pair.getKey() && !pair.getKey().isEmpty()) {
                             sourceEntry = new KafkaSourceEntry(pair.getValue(), this, pair.getKey());
                         }

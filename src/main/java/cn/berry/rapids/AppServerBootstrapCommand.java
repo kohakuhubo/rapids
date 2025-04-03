@@ -87,7 +87,7 @@ public class AppServerBootstrapCommand implements Callable<Integer> {
             try {
                 appServer.stop();
             } catch(Throwable e) {
-                // 关闭过程中出现异常，记录或处理
+                logger.error("stop error.", e);
             }
         }));
         

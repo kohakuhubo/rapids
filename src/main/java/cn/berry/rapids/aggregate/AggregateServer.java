@@ -9,11 +9,18 @@ import cn.berry.rapids.configuration.Configuration;
 import cn.berry.rapids.eventbus.*;
 import com.berry.clickhouse.tcp.client.ClickHouseClient;
 import com.berry.clickhouse.tcp.client.data.Block;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class AggregateServer implements AggregateServiceHandler, CycleLife {
+
+    /**
+     * 日志记录器
+     */
+    private static final Logger logger = LoggerFactory.getLogger(AggregateServer.class);
 
     private final Configuration configuration;
 
@@ -67,7 +74,7 @@ public class AggregateServer implements AggregateServiceHandler, CycleLife {
                         }
                     }));
                 } catch (Exception e) {
-                    //ignore
+                    logger.error("create calculation handler error", e);
                 }
             }
         }

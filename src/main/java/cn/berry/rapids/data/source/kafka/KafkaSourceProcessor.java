@@ -74,28 +74,45 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
     @Override
     public void process(SourceEntry<KafkaSourceEntry> entry) {
         KafkaSourceEntry sourceEntry = entry.entry();
-        List<ConsumerRecord<String, byte[]>> records = sourceEntry.getRecords();
-        List<Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>>> ktpOffsets = sourceEntry.getKtpOffsets();
+
+        List<KafkaTopicRecords> kafkaTopicRecordsList = sourceEntry.getKafkaTopicRecordsList();
+
         BlockConfig blockConfig = configuration.getSystemConfig().getBlock();
 
         Map<String, List<ConsumerRecord<String, byte[]>>> recordsMap = records.stream().collect(Collectors.groupingBy(ConsumerRecord::topic));
 
-        for (Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>> ktpOffset : ktpOffsets) {
-            KafkaTopicPartition ktp = ktpOffset.getKey();
-            String topic = ktp.getTopic();
-            List<KafkaTopicPartitionOffset> ktpOffsetList = ktpOffset.getValue();
-            List<ConsumerRecord<String, byte[]>> topicRecord = recordsMap.get(topic);
+        for (KafkaTopicRecords kafkaTopicRecords : kafkaTopicRecordsList) {
+            //主题
+            String topic = kafkaTopicRecords.getTopic();
+            //获取主题对应的数据定义信息
             SourceDataDefinition sourceDataDefinition = configuration.getSourceDataDefinition(SourceTypeEnum.KAFKA, topic);
-
+            //列数据定义
+            ColumnDataDefinition[] columnDataDefinitions = sourceDataDefinition.getColumnDataDefinitions();
             Block block;
             try {
                 block = client.createBlock(sourceDataDefinition.getTableName());
             } catch (Exception e) {
+                logger.error("create block has error!", e);
                 continue;
             }
-            SourceDataEvent sourceDataEvent = new SourceDataEvent(topic, blockConfig.getBatchDataMaxRowCnt(), blockConfig.getBatchDataMaxByteSize(), block);
-
-            ColumnDataDefinition[] columnDataDefinitions = sourceDataDefinition.getColumnDataDefinitions();
+            //创建源数据事件
+            SourceDataEvent sourceDataEvent = new SourceDataEvent(topic, blockConfig.getBatchDataMaxRowCnt(),
+                    blockConfig.getBatchDataMaxByteSize(), block);
+            //待提交位移
+            List<Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>>> commitOffset = new ArrayList<>();
+            for (KafkaTopicPartitionRecords kafkaTopicPartitionRecords : kafkaTopicRecords.getPartitionRecords()) {
+                //分区
+                KafkaTopicPartition ktp = kafkaTopicPartitionRecords.getKtp();
+                List<KafkaTopicPartitionOffset> ktpOffsetList = new ArrayList<>();
+                //消息
+                List<KafkaTopicPartitionRecord> records = kafkaTopicPartitionRecords.getRecords();
+                for (KafkaTopicPartitionRecord kafkaTopicPartitionRecord : records) {
+                    //消息
+                    ConsumerRecord<String, byte[]> record = kafkaTopicPartitionRecord.getRecord();
+                    //位移
+                    KafkaTopicPartitionOffset ktpOffset = kafkaTopicPartitionRecord.getKtpOffset();
+                }
+            }
 
             int commitedSize = 0;
             for (int i = 0; i < topicRecord.size(); i++, commitedSize++) {
@@ -109,21 +126,12 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
 
                 ConsumerRecord<String, byte[]> record = topicRecord.get(i);
                 commitPartitionOffsetList.add(ktpOffsetList.get(i));
-                byte[] bytes = record.value();
-                int offset = 0;
-                for (ColumnDataDefinition columnDataDefinition : columnDataDefinitions) {
-                    String columnName = columnDataDefinition.getName();
-                    if (null == columnName || columnName.trim().isEmpty()) {
-                        //没有列明，不解析，直接跳过
-                        offset = skip(columnDataDefinition.getClazz(), bytes, offset);
-                    } else {
-                        try {
-                            //写入block
-                            offset = write(columnDataDefinition.getClazz(), bytes, offset, block, columnName);
-                        } catch (SQLException | IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
+                try {
+                    parseColumns(block, columnDataDefinitions, record);
+                } catch (Throwable e) {
+                    logger.error("parse columns has error! topic: {} partition: {} offset: {}", record.topic(), record.partition(),
+                            record.offset(), e);
+                    break;
                 }
                 //判断block是否已经写满
                 if (sourceDataEvent.isFull()) {
@@ -136,6 +144,7 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
                     try {
                         block = client.createBlock(sourceDataDefinition.getTableName());
                     } catch (Exception e) {
+                        logger.error("create block has error!", e);
                         continue;
                     }
                     //重新初始化sourceDataEvent
@@ -143,8 +152,27 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
                 }
             }
             //检查是否还有未提交数据
-            if (!sourceDataEvent.isFull()) {
+            if (null != sourceDataEvent && !sourceDataEvent.isFull()) {
                 sourceDataPersistenceServer.handle(sourceDataEvent);
+            }
+        }
+    }
+
+    private void parseColumns(Block block, ColumnDataDefinition[] columnDataDefinitions,
+                              ConsumerRecord<String, byte[]> record) throws Throwable {
+
+        byte[] bytes = record.value();
+        int offset = 0;
+        while (offset < bytes.length) {
+            for (ColumnDataDefinition columnDataDefinition : columnDataDefinitions) {
+                String columnName = columnDataDefinition.getName();
+                if (null == columnName || columnName.trim().isEmpty()) {
+                    //没有列明，不解析，直接跳过
+                    offset = skip(columnDataDefinition.getClazz(), bytes, offset);
+                } else {
+                    //写入block
+                    offset = write(columnDataDefinition.getClazz(), bytes, offset, block, columnName);
+                }
             }
         }
     }

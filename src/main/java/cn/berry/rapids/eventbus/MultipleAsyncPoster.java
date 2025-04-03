@@ -1,6 +1,8 @@
 package cn.berry.rapids.eventbus;
 
 import cn.berry.rapids.Stoppable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 多异步投递器类
@@ -16,6 +18,11 @@ import cn.berry.rapids.Stoppable;
  * @version 1.0.0
  */
 public class MultipleAsyncPoster extends Stoppable implements Runnable {
+
+    /**
+     * 日志记录器
+     */
+    private static final Logger logger = LoggerFactory.getLogger(MultipleAsyncPoster.class);
 
     /**
      * 多队列选择器
@@ -70,7 +77,7 @@ public class MultipleAsyncPoster extends Stoppable implements Runnable {
             try {
                 event = receiver.getQueue().poll();
             } catch (Throwable e) {
-                //ignore
+                logger.error("event handover error", e);
             }
             if (Thread.currentThread().isInterrupted() || stopped) {
                 break;
@@ -87,13 +94,13 @@ public class MultipleAsyncPoster extends Stoppable implements Runnable {
                         subscription.onMessage(event);
                     }
                 } catch (Throwable e) {
-                    //ignore
+                    logger.error("subscription[" + subscription.type() + "] error", e);
                 }
             } else {
                 try {
                     Thread.sleep(200L);
                 } catch (Exception e) {
-                    //ignore
+                    logger.error("sleep error", e);
                 }
             }
         }

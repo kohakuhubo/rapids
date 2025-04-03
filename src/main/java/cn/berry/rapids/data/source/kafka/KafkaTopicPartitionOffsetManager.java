@@ -161,19 +161,23 @@ public class KafkaTopicPartitionOffsetManager {
      * @return 偏移量元数据
      * @throws InterruptedException 中断异常
      */
-    public Pair<List<Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>>>, List<ConsumerRecord<String, byte[]>>> recordOffset(ConsumerRecords<String, byte[]> records) throws InterruptedException {
-        List<Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>>> offsetMetadata = new ArrayList<>();
-        List<ConsumerRecord<String, byte[]>> finalRecords = new ArrayList<>(records.count());
+    public List<KafkaTopicRecords> recordOffset(ConsumerRecords<String, byte[]> records) throws InterruptedException {
+
+        Map<String, KafkaTopicRecords> kafkaTopicRecordsMap = new HashMap<>(records.count());
+
         KafkaTopicPartitionOffsetFastHolder[] holders = getHolders();
         for (KafkaTopicPartitionOffsetFastHolder holder : holders) {
             List<ConsumerRecord<String, byte[]>> tpRecords = records.records(holder.getTopicPartition());
             List<KafkaTopicPartitionOffset> offsets = holder.addOffset(tpRecords);
-            if (null != offsets && !offsets.isEmpty()) {
-                offsetMetadata.add(new Pair<>(holder.getKTopicPartition(), offsets));
-                finalRecords.addAll(tpRecords);
+
+            List<KafkaTopicPartitionRecord> kafkaTopicPartitionRecords = new ArrayList<>(tpRecords.size());
+            for (int i = 0; i < tpRecords.size(); i++) {
+                kafkaTopicPartitionRecords.add(new KafkaTopicPartitionRecord(offsets.get(i), tpRecords.get(i)));
             }
+            kafkaTopicRecordsMap.computeIfAbsent(holder.getTopicPartition().topic(), KafkaTopicRecords::new)
+                    .addPartitionRecords(new KafkaTopicPartitionRecords(holder.getKTopicPartition(), kafkaTopicPartitionRecords));
         }
-        return new Pair<>(offsetMetadata, finalRecords);
+        return new ArrayList<>(kafkaTopicRecordsMap.values());
     }
 
     /**
