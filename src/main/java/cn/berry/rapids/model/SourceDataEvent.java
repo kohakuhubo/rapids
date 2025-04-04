@@ -23,16 +23,6 @@ public class SourceDataEvent implements Event<SourceDataEvent> {
     private String sourceType;
 
     /**
-     * 最大行数限制
-     */
-    private final int maxRowCnt;
-
-    /**
-     * 最大数据块大小限制
-     */
-    private final long maxBlockSize;
-
-    /**
      * 数据源条目
      */
     private SourceEntry<?> sourceEntry;
@@ -45,23 +35,13 @@ public class SourceDataEvent implements Event<SourceDataEvent> {
     /**
      * 构造基础数据对象
      * 
-     * @param maxRowCnt 最大行数限制
-     * @param maxBlockSize 最大数据块大小限制
+     * @param sourceType 数据源类型
+     * @param sourceType 数据块
      * @param block 数据块对象
      */
-    public SourceDataEvent(String sourceType, int maxRowCnt, long maxBlockSize, Block block) {
+    public SourceDataEvent(String sourceType, Block block, SourceEntry<?> sourceEntry) {
         this.sourceType = sourceType;
-        this.maxRowCnt = maxRowCnt;
-        this.maxBlockSize = maxBlockSize;
         this.block = block;
-    }
-
-    /**
-     * 设置数据源条目
-     * 
-     * @param sourceEntry 数据源条目
-     */
-    public void setSourceEntry(SourceEntry<?> sourceEntry) {
         this.sourceEntry = sourceEntry;
     }
 
@@ -72,24 +52,6 @@ public class SourceDataEvent implements Event<SourceDataEvent> {
      */
     public Block getBlock() {
         return block;
-    }
-
-    /**
-     * 检查数据块是否为空
-     * 
-     * @return 如果数据块行数为0则返回true，否则返回false
-     */
-    public boolean isEmpty() {
-        return block.rowCnt() == 0;
-    }
-
-    /**
-     * 检查数据块是否已满
-     * 
-     * @return 如果数据块行数达到最大限制则返回true，否则返回false
-     */
-    public boolean isFull() {
-        return block.rowCnt() >= maxRowCnt;
     }
 
     /**

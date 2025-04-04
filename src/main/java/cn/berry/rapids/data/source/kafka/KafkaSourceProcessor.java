@@ -21,22 +21,18 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * Kafka数据源处理器类
- * 
+ * <p>
  * 描述: 负责处理从Kafka消费者中读取的数据，并将其传递给数据解析服务。
  * 此类实现了生命周期接口，管理处理器的启动和停止。
- * 
+ * <p>
  * 特性:
  * 1. 处理Kafka消费者读取的数据
  * 2. 将数据传递给数据解析服务
- * 
+ *
  * @author Berry
  * @version 1.0.0
  */
@@ -52,112 +48,147 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
 
     private static final byte[] DEFAULT_STRING = "".getBytes(StandardCharsets.UTF_8);
 
+    private final BlockConfig blockConfig;
+
     /**
      * 构造Kafka数据源处理器
-     * 
-     * @param configuration 应用配置对象
+     *
+     * @param configuration               应用配置对象
      * @param sourceDataPersistenceServer 基础数据持久化服务
-     * @param client ClickHouse客户端
+     * @param client                      ClickHouse客户端
      */
     public KafkaSourceProcessor(Configuration configuration, SourceDataPersistenceServer sourceDataPersistenceServer,
                                 ClickHouseClient client) {
         this.configuration = configuration;
+        this.blockConfig = configuration.getSystemConfig().getBlock();
         this.sourceDataPersistenceServer = sourceDataPersistenceServer;
         this.client = client;
     }
 
     /**
      * 处理数据源条目
-     * 
+     *
      * @param entry 数据源条目
      */
     @Override
     public void process(SourceEntry<KafkaSourceEntry> entry) {
         KafkaSourceEntry sourceEntry = entry.entry();
-
-        List<KafkaTopicRecords> kafkaTopicRecordsList = sourceEntry.getKafkaTopicRecordsList();
-
-        BlockConfig blockConfig = configuration.getSystemConfig().getBlock();
-
-        Map<String, List<ConsumerRecord<String, byte[]>>> recordsMap = records.stream().collect(Collectors.groupingBy(ConsumerRecord::topic));
-
-        for (KafkaTopicRecords kafkaTopicRecords : kafkaTopicRecordsList) {
-            //主题
-            String topic = kafkaTopicRecords.getTopic();
-            //获取主题对应的数据定义信息
-            SourceDataDefinition sourceDataDefinition = configuration.getSourceDataDefinition(SourceTypeEnum.KAFKA, topic);
-            //列数据定义
-            ColumnDataDefinition[] columnDataDefinitions = sourceDataDefinition.getColumnDataDefinitions();
-            Block block;
+        //遍历主题消息
+        for (KafkaTopicRecords kafkaTopicRecords : sourceEntry.getKafkaTopicRecordsList()) {
             try {
-                block = client.createBlock(sourceDataDefinition.getTableName());
-            } catch (Exception e) {
-                logger.error("create block has error!", e);
-                continue;
-            }
-            //创建源数据事件
-            SourceDataEvent sourceDataEvent = new SourceDataEvent(topic, blockConfig.getBatchDataMaxRowCnt(),
-                    blockConfig.getBatchDataMaxByteSize(), block);
-            //待提交位移
-            List<Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>>> commitOffset = new ArrayList<>();
-            for (KafkaTopicPartitionRecords kafkaTopicPartitionRecords : kafkaTopicRecords.getPartitionRecords()) {
-                //分区
-                KafkaTopicPartition ktp = kafkaTopicPartitionRecords.getKtp();
-                List<KafkaTopicPartitionOffset> ktpOffsetList = new ArrayList<>();
-                //消息
-                List<KafkaTopicPartitionRecord> records = kafkaTopicPartitionRecords.getRecords();
-                for (KafkaTopicPartitionRecord kafkaTopicPartitionRecord : records) {
-                    //消息
-                    ConsumerRecord<String, byte[]> record = kafkaTopicPartitionRecord.getRecord();
-                    //位移
-                    KafkaTopicPartitionOffset ktpOffset = kafkaTopicPartitionRecord.getKtpOffset();
-                }
-            }
-
-            int commitedSize = 0;
-            for (int i = 0; i < topicRecord.size(); i++, commitedSize++) {
-
-                List<KafkaTopicPartitionOffset> commitPartitionOffsetList;
-                if (commitedSize == 0) {
-                    commitPartitionOffsetList = new ArrayList<>(topicRecord.size());
-                } else {
-                    commitPartitionOffsetList = new ArrayList<>(topicRecord.size() - commitedSize);
-                }
-
-                ConsumerRecord<String, byte[]> record = topicRecord.get(i);
-                commitPartitionOffsetList.add(ktpOffsetList.get(i));
-                try {
-                    parseColumns(block, columnDataDefinitions, record);
-                } catch (Throwable e) {
-                    logger.error("parse columns has error! topic: {} partition: {} offset: {}", record.topic(), record.partition(),
-                            record.offset(), e);
-                    break;
-                }
-                //判断block是否已经写满
-                if (sourceDataEvent.isFull()) {
-                    //设置数据的kafka位移信息
-                    sourceDataEvent.setSourceEntry(new KafkaSourceEntry(null, sourceEntry.getKafkaSource(),
-                            Collections.singletonList(new Pair<>(ktp, commitPartitionOffsetList))));
-                    //提交数据
-                    sourceDataPersistenceServer.handle(sourceDataEvent);
-                    //重新初始化block
-                    try {
-                        block = client.createBlock(sourceDataDefinition.getTableName());
-                    } catch (Exception e) {
-                        logger.error("create block has error!", e);
-                        continue;
-                    }
-                    //重新初始化sourceDataEvent
-                    sourceDataEvent = new SourceDataEvent(topic, blockConfig.getBatchDataMaxRowCnt(), blockConfig.getBatchDataMaxByteSize(), block);
-                }
-            }
-            //检查是否还有未提交数据
-            if (null != sourceDataEvent && !sourceDataEvent.isFull()) {
-                sourceDataPersistenceServer.handle(sourceDataEvent);
+                //解析主题消息
+                parseTopicRecord(sourceEntry.getKafkaSource(), kafkaTopicRecords);
+            } catch (Throwable e) {
+                logger.error("process error", e);
             }
         }
     }
 
+    /**
+     * 解析主题消息
+     *
+     * @param kafkaSource       kafka源
+     * @param kafkaTopicRecords kafka主题消息
+     */
+    private void parseTopicRecord(KafkaSource kafkaSource, KafkaTopicRecords kafkaTopicRecords) throws Throwable {
+        //主题
+        String topic = kafkaTopicRecords.getTopic();
+        //获取主题对应的数据定义信息
+        SourceDataDefinition sourceDataDefinition = configuration.getSourceDataDefinition(SourceTypeEnum.KAFKA, topic);
+        //列数据定义
+        ColumnDataDefinition[] columnDataDefinitions = sourceDataDefinition.getColumnDataDefinitions();
+        //数据块
+        Block block = null;
+        //分区消息
+        List<KafkaTopicPartitionRecords> kafkaTopicPartitionRecordsList = kafkaTopicRecords.getPartitionRecords();
+        //待提交位移
+        Map<KafkaTopicPartition, List<KafkaTopicPartitionOffset>> commitOffsetMap = new HashMap<>(kafkaTopicPartitionRecordsList.size());
+        //遍历分区消息
+        for (KafkaTopicPartitionRecords kafkaTopicPartitionRecords : kafkaTopicPartitionRecordsList) {
+            //分区
+            KafkaTopicPartition ktp = kafkaTopicPartitionRecords.getKtp();
+            //消息
+            List<KafkaTopicPartitionRecord> records = kafkaTopicPartitionRecords.getRecords();
+            //获取待提交位移集合
+            List<KafkaTopicPartitionOffset> offsets = commitOffsetMap.computeIfAbsent(ktp, ktp1 -> new ArrayList<>(records.size()));
+            for (KafkaTopicPartitionRecord kafkaTopicPartitionRecord : records) {
+                //消息
+                ConsumerRecord<String, byte[]> record = kafkaTopicPartitionRecord.getRecord();
+                //初始化数据块
+                if (null == block) {
+                    //重新初始化block
+                    try {
+                        block = client.createBlock(sourceDataDefinition.getTableName());
+                    } catch (Exception e) {
+                        throw new RuntimeException(String.format("create block[%s] error!", sourceDataDefinition.getTableName()), e);
+                    }
+                }
+                try {
+                    //解析列数据
+                    parseColumns(block, columnDataDefinitions, kafkaTopicPartitionRecord.getRecord());
+                    //记录位移
+                    offsets.add(kafkaTopicPartitionRecord.getKtpOffset());
+                } catch (Throwable e) {
+                    throw new RuntimeException(String.format("parse columns has error! topic: %s partition: %s offset: %s", record.topic(), record.partition(),
+                            record.offset()), e);
+                }
+                //判断block是否已经写满
+                if (isFull(block)) {
+                    //提交数据
+                    commit(topic, block, kafkaSource, commitOffsetMap);
+                    block = null;
+                }
+            }
+        }
+        //判断block是否为空
+        if (isNotEmpty(block)) {
+            //提交数据
+            commit(topic, block, kafkaSource, commitOffsetMap);
+        }
+    }
+
+    /**
+     * 提交数据
+     *
+     * @param topic           主题
+     * @param block           数据块
+     * @param kafkaSource     kafka数据源
+     * @param commitOffsetMap 提交位移集合
+     */
+    private void commit(String topic, Block block, KafkaSource kafkaSource, Map<KafkaTopicPartition, List<KafkaTopicPartitionOffset>> commitOffsetMap) {
+        //设置数据的kafka位移信息
+        KafkaSourceEntry commitKafkaSourceEntry = new KafkaSourceEntry(kafkaSource);
+        List<Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>>> commitOffsets = commitOffsetMap.entrySet().stream()
+                .map(e -> new Pair<>(e.getKey(), e.getValue())).toList();
+        //清除原有数据
+        commitOffsetMap.clear();
+        commitKafkaSourceEntry.setCommitOffset(commitOffsets);
+        //提交数据
+        sourceDataPersistenceServer.handle(new SourceDataEvent(topic, block, commitKafkaSourceEntry));
+    }
+
+    private boolean isNotEmpty(Block block) {
+        return null != block && block.rowCnt() > 0;
+    }
+
+    /**
+     * 判断数据块是否已经写满
+     *
+     * @param block 数据块
+     */
+    private boolean isFull(Block block) {
+        return block.rowCnt() >= blockConfig.getBatchDataMaxRowCnt()
+                || block.readBytes() >= blockConfig.getBatchDataMaxByteSize();
+    }
+
+    /**
+     * 解析列数据
+     *
+     * @param block                 数据块
+     * @param columnDataDefinitions 列数据定义
+     * @param record                消息
+     * @throws Throwable 解析异常
+     */
     private void parseColumns(Block block, ColumnDataDefinition[] columnDataDefinitions,
                               ConsumerRecord<String, byte[]> record) throws Throwable {
 
@@ -179,9 +210,9 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
 
     /**
      * 跳过数据类型
-     * 
-     * @param type 数据类型
-     * @param bytes 字节数组
+     *
+     * @param type   数据类型
+     * @param bytes  字节数组
      * @param offset 偏移量
      * @return 新的偏移量
      */
@@ -198,15 +229,15 @@ public class KafkaSourceProcessor implements SourceProcessor<KafkaSourceEntry> {
 
     /**
      * 写入数据类型
-     * 
-     * @param type 数据类型
-     * @param bytes 字节数组
-     * @param offset 偏移量
-     * @param block 数据块
+     *
+     * @param type       数据类型
+     * @param bytes      字节数组
+     * @param offset     偏移量
+     * @param block      数据块
      * @param columnName 列名
      * @return 新的偏移量
      * @throws SQLException SQL异常
-     * @throws IOException IO异常
+     * @throws IOException  IO异常
      */
     private static int write(Class<?> type, byte[] bytes, int offset, Block block, String columnName) throws SQLException, IOException {
         IColumn column = block.getColumn(columnName);

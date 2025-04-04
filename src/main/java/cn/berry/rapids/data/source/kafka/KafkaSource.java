@@ -128,8 +128,8 @@ public class KafkaSource extends Stoppable implements Runnable, Source<KafkaSour
                     ConsumerRecords<String, byte[]> records = kafkaFetcher.poll();
                     if (null != records && !records.isEmpty()) {
                         List<KafkaTopicRecords> kafkaTopicRecordsList = offsetManager.recordOffset(records);
-                        if (null != pair.getKey() && !pair.getKey().isEmpty()) {
-                            sourceEntry = new KafkaSourceEntry(pair.getValue(), this, pair.getKey());
+                        if (!kafkaTopicRecordsList.isEmpty()) {
+                            sourceEntry = new KafkaSourceEntry(this, kafkaTopicRecordsList);
                         }
                     }
                 }
@@ -220,7 +220,7 @@ public class KafkaSource extends Stoppable implements Runnable, Source<KafkaSour
     @Override
     public void commit(SourceEntry<KafkaSourceEntry> entry) {
         KafkaSourceEntry kafkaSourceEntry = entry.entry();
-        for (Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>> ktpOffsets : kafkaSourceEntry.getKtpOffsets()) {
+        for (Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>> ktpOffsets : kafkaSourceEntry.getCommitOffset()) {
             try {
                 offsetManager.commitOffset(ktpOffsets.getKey(), ktpOffsets.getValue());
             } catch (InterruptedException e) {

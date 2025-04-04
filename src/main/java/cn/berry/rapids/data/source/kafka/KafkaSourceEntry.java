@@ -2,7 +2,6 @@ package cn.berry.rapids.data.source.kafka;
 
 import cn.berry.rapids.Pair;
 import cn.berry.rapids.data.source.SourceEntry;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.util.List;
 
@@ -25,6 +24,13 @@ public class KafkaSourceEntry implements SourceEntry<KafkaSourceEntry> {
 
     private final KafkaSource kafkaSource;
 
+    private List<Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>>> commitOffset;
+
+    public KafkaSourceEntry(KafkaSource kafkaSource) {
+        this.kafkaSource = kafkaSource;
+        this.kafkaTopicRecordsList = null;
+    }
+
     /**
      * 构造Kafka数据源条目
      *
@@ -34,6 +40,7 @@ public class KafkaSourceEntry implements SourceEntry<KafkaSourceEntry> {
     public KafkaSourceEntry(KafkaSource kafkaSource, List<KafkaTopicRecords> kafkaTopicRecordsList) {
         this.kafkaSource = kafkaSource;
         this.kafkaTopicRecordsList = kafkaTopicRecordsList;
+        this.commitOffset = null;
     }
 
     /**
@@ -83,5 +90,13 @@ public class KafkaSourceEntry implements SourceEntry<KafkaSourceEntry> {
 
     public List<KafkaTopicRecords> getKafkaTopicRecordsList() {
         return kafkaTopicRecordsList;
+    }
+
+    public List<Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>>> getCommitOffset() {
+        return commitOffset;
+    }
+
+    public void setCommitOffset(List<Pair<KafkaTopicPartition, List<KafkaTopicPartitionOffset>>> commitOffset) {
+        this.commitOffset = commitOffset;
     }
 }
