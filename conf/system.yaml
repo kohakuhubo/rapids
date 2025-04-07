@@ -7,3 +7,41 @@ kafka:
   pollTimeout: 30000
   sessionTimeout: 30000
   maxPollIntervalMs: 60000
+
+data:
+  parseThreadSize: 8
+  dataInsertQueue: 64
+  dataInsertWaitTimeMills: 100
+  dataInsertThreadSize: 8
+  dataInsertRetryTimes: 3
+
+aggregate:
+  aggregateWaitTime: 100
+  aggregateThreadSize: 8
+  aggregateWaitQueue: 64
+  aggregateInsertQueue: 64
+  insertThreadSize: 8
+  insertWaitTimeMillis: 100
+  insertRetryTimes: 3
+
+block:
+  batchDataMaxRowCnt: 8192
+  batchDataMaxByteSize: 16777216
+  blockSize: 65535
+  stringBlockSize: 524288
+  cacheLength: 128
+  stackSize: 128
+  selfBufferSize: 1
+  stringStackSize: 128
+  stringSelfBufferSize: 2
+
+clickhouse:
+  host: 127.0.0.1
+  database: default
+  user: default
+  password: honey
+  queryTimeout: 60000
+  connectTimeout: 100000
+  connectionMaxIdle: 16
+  connectionMinIdle: 32
+  connectionTotal: 32

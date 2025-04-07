@@ -1,4 +1,4 @@
 metas:
-  - name: users_log
-    columnNames: ["host", "sessionId", "url", "method", "contentType", "reqByteSize", "respByteSize"]
-    columnTypes: ["String", "Int32", "String", "UInt8", "UInt8", "UInt64", "UInt64"]
+  - name: http_log
+    columnNames: ["host", "uri", "method", "contentType", "reqByteSize", "respByteSize", "reqTime"]
+    columnTypes: ["String", "String", "UInt8", "UInt8", "UInt64", "UInt64", "DateTime"]

@@ -7,9 +7,7 @@ definitions:
     columnDataDefinitions:
       - name: host # clickhosue column name
         type: string # clickhosue column type
-      - name: sessionId
-        type: int
-      - name: url
+      - name: uri
         type: string
       - name: method
         type: int
@@ -19,3 +17,5 @@ definitions:
         type: long
       - name: respByteSize
         type: long
+      - name: reqTime
+        type: int
